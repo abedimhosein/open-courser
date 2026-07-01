@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Workspaces - OpenCourser{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Workspaces</h1>
+    <a href="{% url 'workspace_create' %}" class="btn btn-primary">Add Workspace</a>
+</div>
+
+{% if workspaces %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for workspace in workspaces %}
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ workspace.name }}</h5>
+                <p class="card-text text-muted small">
+                    <code>{{ workspace.course_root }}</code>
+                </p>
+                <p class="card-text">
+                    <small class="text-muted">
+                        Created {{ workspace.created_at|date:"M j, Y" }}
+                    </small>
+                </p>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <a href="{% url 'workspace_detail' workspace.pk %}" class="btn btn-sm btn-outline-primary">
+                    Open
+                </a>
+                <form method="post" action="{% url 'workspace_scan' workspace.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-success">
+                        Scan
+                    </button>
+                </form>
+                <a href="{% url 'workspace_delete' workspace.pk %}" class="btn btn-sm btn-outline-danger">
+                    Delete
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <p class="text-muted mb-3">No workspaces yet.</p>
+    <a href="{% url 'workspace_create' %}" class="btn btn-primary btn-lg">Create Your First Workspace</a>
+</div>
+{% endif %}
+{% endblock %}

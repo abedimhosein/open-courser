@@ -1,0 +1,21 @@
+{% if progress %}
+<div id="course-progress" class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between mb-1">
+            <span>Course Progress</span>
+            <span>{{ progress.overall_percentage|floatformat:1 }}%</span>
+        </div>
+        <div class="progress" style="height: 20px;">
+            <div class="progress-bar" role="progressbar"
+                 style="width: {{ progress.overall_percentage|floatformat:1 }}%"
+                 aria-valuenow="{{ progress.overall_percentage|floatformat:0 }}"
+                 aria-valuemin="0" aria-valuemax="100">
+                {{ progress.completed_files }}/{{ progress.total_files }} files
+            </div>
+        </div>
+        <small class="text-muted mt-1 d-block">
+            {{ progress.completed_duration|floatformat:0 }}s / {{ progress.total_duration|floatformat:0 }}s watched
+        </small>
+    </div>
+</div>
+{% endif %}

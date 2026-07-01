@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.name }} - OpenCourser{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'workspace_list' %}">Workspaces</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'workspace_detail' course.workspace.pk %}">{{ course.workspace.name }}</a></li>
+        <li class="breadcrumb-item active">{{ course.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{ course.name }}</h1>
+</div>
+
+{% include "courses/_progress.html" %}
+
+{% include "courses/_file_list.html" %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('refresh-course-progress', function() {
+        htmx.ajax('GET', '{% url "course_progress_partial" course.pk %}', {
+            target: '#course-progress',
+            swap: 'outerHTML'
+        });
+    });
+</script>
+{% endblock %}

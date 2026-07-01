@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Workspace - OpenCourser{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <h1 class="mb-4">Delete Workspace?</h1>
+        <p class="lead">Are you sure you want to delete <strong>{{ workspace.name }}</strong>?</p>
+        <p class="text-muted">
+            This will remove all indexed course data for this workspace.
+            Files on disk will not be affected.
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Delete</button>
+            <a href="{% url 'workspace_detail' workspace.pk %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

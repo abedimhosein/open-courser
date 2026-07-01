@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}{{ workspace.name }} - OpenCourser{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'workspace_list' %}">Workspaces</a></li>
+        <li class="breadcrumb-item active">{{ workspace.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">{{ workspace.name }}</h1>
+        <code class="text-muted">{{ workspace.course_root }}</code>
+    </div>
+    <div>
+        <form method="post" action="{% url 'workspace_scan' workspace.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">
+                <span class="spinner-border spinner-border-sm htmx-indicator" role="status"></span>
+                Scan Now
+            </button>
+        </form>
+        <a href="{% url 'workspace_delete' workspace.pk %}" class="btn btn-outline-danger">Delete</a>
+    </div>
+</div>
+
+{% if scan_summary %}
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+    Scan complete:
+    <strong>{{ scan_summary.total_files }}</strong> files found.
+    {% if scan_summary.added %}+{{ scan_summary.added }} added. {% endif %}
+    {% if scan_summary.modified %}{{ scan_summary.modified }} modified. {% endif %}
+    {% if scan_summary.deleted %}-{{ scan_summary.deleted }} removed.{% endif %}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+{% if courses %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for course in courses %}
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ course.name }}</h5>
+                <p class="card-text text-muted small">
+                    <code>{{ course.relative_path }}</code>
+                </p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'course_detail' course.pk %}" class="btn btn-sm btn-outline-primary">
+                    Browse Course
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <p class="text-muted">No courses found.</p>
+    <p class="text-muted small">
+        Click "Scan Now" to index the course directory.
+    </p>
+</div>
+{% endif %}
+{% endblock %}

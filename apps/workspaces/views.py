@@ -1,0 +1,137 @@
+from pathlib import Path
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpRequest, HttpResponse
+
+from apps.courses.services.scanner import scan_workspace
+from apps.courses.models import Course
+from apps.workspaces.models import Workspace
+from apps.workspaces.services.manager import create_workspace, delete_workspace
+
+
+def workspace_list(request: HttpRequest) -> HttpResponse:
+    """List all workspaces."""
+    workspaces = Workspace.objects.all()
+    return render(request, "workspaces/list.html", {"workspaces": workspaces})
+
+
+def workspace_detail(request: HttpRequest, pk: int) -> HttpResponse:
+    """View a workspace with its courses."""
+    workspace = get_object_or_404(Workspace, pk=pk)
+    courses = Course.objects.filter(workspace=workspace)
+    return render(
+        request,
+        "workspaces/detail.html",
+        {"workspace": workspace, "courses": courses},
+    )
+
+
+def workspace_create(request: HttpRequest) -> HttpResponse:
+    """Create a new workspace."""
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        course_root = request.POST.get("course_root", "").strip()
+
+        if not name or not course_root:
+            return render(
+                request,
+                "workspaces/create.html",
+                {"error": "Name and course root are required."},
+            )
+
+        try:
+            workspace = create_workspace(name, course_root)
+            return redirect("workspace_detail", pk=workspace.pk)
+        except ValueError as e:
+            return render(
+                request,
+                "workspaces/create.html",
+                {"error": str(e)},
+            )
+
+    return render(request, "workspaces/create.html")
+
+
+def workspace_delete(request: HttpRequest, pk: int) -> HttpResponse:
+    """Delete a workspace."""
+    workspace = get_object_or_404(Workspace, pk=pk)
+
+    if request.method == "POST":
+        delete_workspace(workspace)
+        return redirect("workspace_list")
+
+    return render(request, "workspaces/confirm_delete.html", {"workspace": workspace})
+
+
+def workspace_scan(request: HttpRequest, pk: int) -> HttpResponse:
+    """Trigger a scan of a workspace's course root."""
+    workspace = get_object_or_404(Workspace, pk=pk)
+    incremental = request.POST.get("mode", "incremental") != "full"
+
+    scan_result = scan_workspace(workspace, incremental=incremental)
+
+    courses = Course.objects.filter(workspace=workspace)
+    return render(
+        request,
+        "workspaces/detail.html",
+        {
+            "workspace": workspace,
+            "courses": courses,
+            "scan_summary": {
+                "added": len(scan_result.change_set.added) if scan_result.change_set else 0,
+                "modified": len(scan_result.change_set.modified) if scan_result.change_set else 0,
+                "deleted": len(scan_result.change_set.deleted) if scan_result.change_set else 0,
+                "total_files": len(scan_result.files),
+            },
+        },
+    )
+
+
+def browse_directories(request: HttpRequest) -> HttpResponse:
+    """
+    HTMX partial - browse subdirectories of a given path.
+
+    Accepts a 'path' query parameter. Returns a list of subdirectories
+    as clickable items for navigation.
+    """
+    current_path_str = request.GET.get("path", "").strip()
+
+    if not current_path_str:
+        if Path("/").exists():
+            candidates = [Path(d) for d in ("/", str(Path.home())) if Path(d).exists()]
+            current_path = candidates[0] if candidates else Path.home()
+        else:
+            current_path = Path.home()
+    else:
+        current_path = Path(current_path_str).resolve()
+
+    if not current_path.exists() or not current_path.is_dir():
+        current_path = Path.home()
+
+    parent_path = str(current_path.parent) if current_path.parent != current_path else ""
+
+    try:
+        entries = sorted(
+            [e for e in current_path.iterdir() if e.is_dir() and not e.name.startswith((".", "_"))],
+            key=lambda e: e.name.lower(),
+        )
+    except PermissionError:
+        entries = []
+
+    directories = []
+    for entry in entries:
+        try:
+            rel_path = str(entry.resolve())
+            directories.append({"name": entry.name, "path": rel_path})
+        except (OSError, PermissionError):
+            continue
+
+    return render(
+        request,
+        "workspaces/_directory_browser.html",
+        {
+            "current_path": str(current_path),
+            "parent_path": parent_path,
+            "directories": directories,
+        },
+    )
