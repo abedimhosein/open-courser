@@ -1,5 +1,6 @@
 from django.http import HttpRequest, HttpResponse, HttpResponseNotAllowed
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
+from django.forms import ModelForm
 
 from apps.courses.models import Course, CourseFile
 from apps.media.services.extractor import extract_and_save_metadata
@@ -10,6 +11,12 @@ from apps.progress.services.tracker import (
     mark_completed,
     reset_file_progress,
 )
+
+
+class CourseEditForm(ModelForm):
+    class Meta:
+        model = Course
+        fields = ["name", "cover_image"]
 
 
 def course_detail(request: HttpRequest, pk: int) -> HttpResponse:
@@ -30,6 +37,21 @@ def course_detail(request: HttpRequest, pk: int) -> HttpResponse:
             "file_progresses": file_progresses,
         },
     )
+
+
+def course_edit(request: HttpRequest, pk: int) -> HttpResponse:
+    """Edit course name and cover image."""
+    course = get_object_or_404(Course, pk=pk)
+
+    if request.method == "POST":
+        form = CourseEditForm(request.POST, request.FILES, instance=course)
+        if form.is_valid():
+            form.save()
+            return redirect("course_detail", pk=course.pk)
+    else:
+        form = CourseEditForm(instance=course)
+
+    return render(request, "courses/edit.html", {"form": form, "course": course})
 
 
 def course_progress_partial(request: HttpRequest, pk: int) -> HttpResponse:

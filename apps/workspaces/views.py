@@ -2,6 +2,8 @@ from pathlib import Path
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpRequest, HttpResponse
+from django.core.paginator import Paginator
+from django.forms import ModelForm
 
 from apps.courses.services.scanner import scan_workspace
 from apps.courses.models import Course
@@ -10,10 +12,21 @@ from apps.workspaces.models import Workspace
 from apps.workspaces.services.manager import create_workspace, delete_workspace
 
 
+class WorkspaceEditForm(ModelForm):
+    class Meta:
+        model = Workspace
+        fields = ["name", "cover_image"]
+
+
+PAGE_SIZE = 9
+
+
 def workspace_list(request: HttpRequest) -> HttpResponse:
     """List all workspaces."""
-    workspaces = Workspace.objects.all()
-    return render(request, "workspaces/list.html", {"workspaces": workspaces})
+    workspaces = Paginator(Workspace.objects.all(), PAGE_SIZE).get_page(
+        request.GET.get("page")
+    )
+    return render(request, "workspaces/list.html", {"page_obj": workspaces})
 
 
 def sort_course_list(courses, sort_by: str) -> list:
@@ -39,7 +52,7 @@ def workspace_detail(request: HttpRequest, pk: int) -> HttpResponse:
     if sort_by not in ("name", "progress"):
         sort_by = "name"
     courses = Course.objects.filter(workspace=workspace)
-    course_list = sort_course_list(courses, sort_by)
+    course_list = Paginator(sort_course_list(courses, sort_by), PAGE_SIZE).get_page(request.GET.get("page"))
     return render(
         request,
         "workspaces/detail.html",
@@ -95,7 +108,9 @@ def workspace_scan(request: HttpRequest, pk: int) -> HttpResponse:
     scan_result = scan_workspace(workspace, incremental=incremental)
 
     courses = Course.objects.filter(workspace=workspace)
-    course_list = sort_course_list(courses, sort_by)
+    course_list = Paginator(sort_course_list(courses, sort_by), PAGE_SIZE).get_page(
+        request.GET.get("page")
+    )
     return render(
         request,
         "workspaces/detail.html",
@@ -111,6 +126,21 @@ def workspace_scan(request: HttpRequest, pk: int) -> HttpResponse:
             },
         },
     )
+
+
+def workspace_edit(request: HttpRequest, pk: int) -> HttpResponse:
+    """Edit workspace name and cover image."""
+    workspace = get_object_or_404(Workspace, pk=pk)
+
+    if request.method == "POST":
+        form = WorkspaceEditForm(request.POST, request.FILES, instance=workspace)
+        if form.is_valid():
+            form.save()
+            return redirect("workspace_detail", pk=workspace.pk)
+    else:
+        form = WorkspaceEditForm(instance=workspace)
+
+    return render(request, "workspaces/edit.html", {"form": form, "workspace": workspace})
 
 
 def browse_directories(request: HttpRequest) -> HttpResponse:

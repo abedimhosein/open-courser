@@ -11,25 +11,36 @@
 </nav>
 
 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4 gap-2">
-    <div class="min-w-0">
-        <h1 class="mb-1 text-break">{{ workspace.name }}</h1>
-        <code class="text-muted small text-break">{{ workspace.course_root }}</code>
+    <div class="d-flex align-items-center gap-3 min-w-0">
+        {% if workspace.cover_image %}
+        <img src="{{ workspace.cover_image.url }}" alt="" class="rounded" style="width: 64px; height: 64px; object-fit: cover;">
+        {% endif %}
+        <div>
+            <h1 class="mb-1 text-break">{{ workspace.name }}</h1>
+            <code class="text-muted small text-break">{{ workspace.course_root }}</code>
+        </div>
     </div>
     <div class="flex-shrink-0">
+        <a href="{% url 'workspace_edit' workspace.pk %}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-pen me-1"></i>Edit</a>
         <form method="post" action="{% url 'workspace_scan' workspace.pk %}" class="d-inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-success btn-sm">
-                <span class="spinner-border spinner-border-sm htmx-indicator" role="status"></span>
+                <i class="fa-solid fa-rotate me-1"></i><span class="spinner-border spinner-border-sm htmx-indicator" role="status"></span>
                 Scan Now
             </button>
         </form>
-        <a href="{% url 'workspace_delete' workspace.pk %}" class="btn btn-outline-danger btn-sm">Delete</a>
+        <a href="{% url 'workspace_delete' workspace.pk %}" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash-can me-1"></i>Delete</a>
     </div>
 </div>
 
-<div class="btn-group btn-group-sm mb-3" role="group">
-    <a href="?sort=name" class="btn btn-outline-secondary {% if current_sort == 'name' %}active{% endif %}">Name</a>
-    <a href="?sort=progress" class="btn btn-outline-secondary {% if current_sort == 'progress' %}active{% endif %}">Progress</a>
+<div class="d-flex align-items-center gap-3 mb-3">
+    <div class="btn-group btn-group-sm" role="group">
+        <a href="?sort=name" class="btn btn-outline-secondary {% if current_sort == 'name' %}active{% endif %}"><i class="fa-solid fa-arrow-down-a-z me-1"></i>Name</a>
+        <a href="?sort=progress" class="btn btn-outline-secondary {% if current_sort == 'progress' %}active{% endif %}"><i class="fa-solid fa-arrow-down-short-wide me-1"></i>Progress</a>
+    </div>
+    {% if course_list.paginator.num_pages > 1 %}
+    <small class="text-muted">Page {{ course_list.number }} of {{ course_list.paginator.num_pages }}</small>
+    {% endif %}
 </div>
 
 {% if scan_summary %}
@@ -48,8 +59,12 @@
     {% for item in course_list %}
     <div class="col">
         <div class="card h-100">
+            {% if item.course.cover_image %}
+            <img src="{{ item.course.cover_image.url }}" class="card-img-top" alt=""
+                 style="height: 140px; object-fit: cover;">
+            {% endif %}
             <div class="card-body">
-                <h5 class="card-title"><a href="{% url 'course_detail' item.course.pk %}" class="text-decoration-none">{{ item.course.name }}</a></h5>
+                <h5 class="card-title"><span class="text-muted fw-semibold me-1">{{ course_list.start_index|add:forloop.counter0 }}.</span><a href="{% url 'course_detail' item.course.pk %}" class="text-decoration-none">{{ item.course.name }}</a></h5>
                 <p class="card-text text-muted small">
                     <code>{{ item.course.relative_path }}</code>
                 </p>
@@ -73,13 +88,39 @@
             </div>
             <div class="card-footer">
                 <a href="{% url 'course_detail' item.course.pk %}" class="btn btn-sm btn-outline-primary">
-                    Browse Course
+                    <i class="fa-solid fa-arrow-right me-1"></i>Browse Course
                 </a>
             </div>
         </div>
     </div>
     {% endfor %}
 </div>
+
+{% if course_list.paginator.num_pages > 1 %}
+<nav class="mt-4" aria-label="Course pages">
+    <ul class="pagination justify-content-center">
+        {% if course_list.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?sort={{ current_sort }}&page={{ course_list.previous_page_number }}"><i class="fa-solid fa-chevron-left me-1"></i>Previous</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link"><i class="fa-solid fa-chevron-left me-1"></i>Previous</span></li>
+        {% endif %}
+        {% for num in course_list.paginator.page_range %}
+        <li class="page-item {% if num == course_list.number %}active{% endif %}">
+            <a class="page-link" href="?sort={{ current_sort }}&page={{ num }}">{{ num }}</a>
+        </li>
+        {% endfor %}
+        {% if course_list.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?sort={{ current_sort }}&page={{ course_list.next_page_number }}">Next<i class="fa-solid fa-chevron-right ms-1"></i></a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Next<i class="fa-solid fa-chevron-right ms-1"></i></span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
 {% else %}
 <div class="text-center py-5">
     <p class="text-muted">No courses found.</p>

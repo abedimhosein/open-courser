@@ -9,6 +9,7 @@
             {% with fp=file_progresses|dictsort:"file_id" %}
             <div class="list-group-item list-group-item-action" id="file-row-{{ f.pk }}">
                 <div class="d-flex flex-wrap align-items-center gap-2">
+                    <span class="text-muted fw-semibold" style="min-width: 1.5em;">{{ forloop.counter }}.</span>
                     <div>
                         {% if f.file_type == "video" %}
                         <span class="badge bg-danger">Video</span>
@@ -45,7 +46,7 @@
                                 hx-target="#course-file-list"
                                 hx-swap="outerHTML"
                                 title="Undo complete">
-                            Undo
+                            <i class="fa-solid fa-undo me-1"></i>Undo
                         </button>
                         {% elif fp.status == "in_progress" %}
                         <div class="d-inline-block text-end">
@@ -58,7 +59,7 @@
                                 hx-post="{% url 'toggle_complete' course.pk f.pk %}"
                                 hx-target="#course-file-list"
                                 hx-swap="outerHTML">
-                            Mark Complete
+                            <i class="fa-solid fa-check me-1"></i>Mark Complete
                         </button>
                         {% else %}
                         <span class="badge bg-secondary">Not Started</span>
@@ -66,7 +67,7 @@
                                 hx-post="{% url 'toggle_complete' course.pk f.pk %}"
                                 hx-target="#course-file-list"
                                 hx-swap="outerHTML">
-                            Mark Complete
+                            <i class="fa-solid fa-check me-1"></i>Mark Complete
                         </button>
                         {% endif %}
                         {% endif %}

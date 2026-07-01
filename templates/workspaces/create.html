@@ -25,15 +25,15 @@
                            placeholder="C:\Users\me\Courses" required>
                     <button type="button" class="btn btn-outline-secondary"
                             data-bs-toggle="modal" data-bs-target="#directoryBrowserModal">
-                        Browse
+                        <i class="fa-solid fa-folder-tree me-1"></i>Browse
                     </button>
                 </div>
                 <div class="form-text">
                     Absolute path to the directory containing your course folders.
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary">Create Workspace</button>
-            <a href="{% url 'workspace_list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Create Workspace</button>
+            <a href="{% url 'workspace_list' %}" class="btn btn-secondary"><i class="fa-solid fa-xmark me-1"></i>Cancel</a>
         </form>
     </div>
 </div>

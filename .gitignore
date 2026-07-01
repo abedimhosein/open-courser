@@ -13,3 +13,5 @@ Thumbs.db
 test_courses/
 .idea
 .opencode
+media/*
+!media/.gitkeep

@@ -11,8 +11,15 @@
     </ol>
 </nav>
 
-<div class="mb-4">
-    <h1 class="text-break">{{ course.name }}</h1>
+<div class="d-flex align-items-start gap-3 mb-4">
+    {% if course.cover_image %}
+    <img src="{{ course.cover_image.url }}" alt="" class="rounded flex-shrink-0"
+         style="width: 80px; height: 80px; object-fit: cover;">
+    {% endif %}
+    <div class="flex-grow-1">
+        <h1 class="text-break mb-1">{{ course.name }}</h1>
+        <a href="{% url 'course_edit' course.pk %}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-pen me-1"></i>Edit</a>
+    </div>
 </div>
 
 {% include "courses/_progress.html" %}

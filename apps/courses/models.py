@@ -11,6 +11,7 @@ class Course(models.Model):
     )
     name = models.CharField(max_length=255)
     relative_path = models.CharField(max_length=1024)
+    cover_image = models.ImageField(upload_to="covers/courses/", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
