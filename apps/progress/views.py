@@ -1,4 +1,5 @@
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.core.handlers.wsgi import WSGIRequest
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 
 from apps.courses.models import CourseFile
@@ -10,7 +11,7 @@ from apps.progress.services.tracker import (
 )
 
 
-def update_position(request: HttpRequest, file_pk: int) -> HttpResponse:
+def update_position(request: WSGIRequest, file_pk: int) -> HttpResponse:
     """
     HTMX endpoint - update playback position for a course file.
     """
@@ -29,7 +30,7 @@ def update_position(request: HttpRequest, file_pk: int) -> HttpResponse:
     return JsonResponse({"position": position, "status": "ok"})
 
 
-def mark_file_completed(request: HttpRequest, file_pk: int) -> HttpResponse:
+def mark_file_completed(request: WSGIRequest, file_pk: int) -> HttpResponse:
     """Mark a course file as completed."""
     course_file = get_object_or_404(CourseFile, pk=file_pk)
 
@@ -41,14 +42,14 @@ def mark_file_completed(request: HttpRequest, file_pk: int) -> HttpResponse:
     return JsonResponse({"status": "completed"})
 
 
-def file_progress(request: HttpRequest, file_pk: int) -> HttpResponse:
+def file_progress(request: WSGIRequest, file_pk: int) -> HttpResponse:
     """Get progress for a single file as JSON."""
     course_file = get_object_or_404(CourseFile, pk=file_pk)
     progress = get_file_progress(course_file)
     return JsonResponse(progress)
 
 
-def reset_progress(request: HttpRequest, file_pk: int) -> HttpResponse:
+def reset_progress(request: WSGIRequest, file_pk: int) -> HttpResponse:
     """Reset progress for a course file."""
     course_file = get_object_or_404(CourseFile, pk=file_pk)
 

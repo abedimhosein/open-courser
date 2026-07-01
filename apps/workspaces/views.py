@@ -1,12 +1,13 @@
 from pathlib import Path
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpRequest, HttpResponse
+from django.core.handlers.wsgi import WSGIRequest
 from django.core.paginator import Paginator
 from django.forms import ModelForm
+from django.http import HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
 
-from apps.courses.services.scanner import scan_workspace
 from apps.courses.models import Course
+from apps.courses.services.scanner import scan_workspace
 from apps.progress.services.tracker import get_course_progress
 from apps.workspaces.models import Workspace
 from apps.workspaces.services.manager import create_workspace, delete_workspace
@@ -21,11 +22,9 @@ class WorkspaceEditForm(ModelForm):
 PAGE_SIZE = 9
 
 
-def workspace_list(request: HttpRequest) -> HttpResponse:
+def workspace_list(request: WSGIRequest) -> HttpResponse:
     """List all workspaces."""
-    workspaces = Paginator(Workspace.objects.all(), PAGE_SIZE).get_page(
-        request.GET.get("page")
-    )
+    workspaces = Paginator(Workspace.objects.all(), PAGE_SIZE).get_page(request.GET.get("page"))
     return render(request, "workspaces/list.html", {"page_obj": workspaces})
 
 
@@ -45,12 +44,14 @@ def sort_course_list(courses, sort_by: str) -> list:
     return course_list
 
 
-def workspace_detail(request: HttpRequest, pk: int) -> HttpResponse:
+def workspace_detail(request: WSGIRequest, pk: int) -> HttpResponse:
     """View a workspace with its courses."""
     workspace = get_object_or_404(Workspace, pk=pk)
-    sort_by = request.GET.get("sort", "name")
+
+    sort_by = request.GET.get("sort", "progress")
     if sort_by not in ("name", "progress"):
-        sort_by = "name"
+        sort_by = "progress"
+
     courses = Course.objects.filter(workspace=workspace)
     course_list = Paginator(sort_course_list(courses, sort_by), PAGE_SIZE).get_page(request.GET.get("page"))
     return render(
@@ -60,7 +61,7 @@ def workspace_detail(request: HttpRequest, pk: int) -> HttpResponse:
     )
 
 
-def workspace_create(request: HttpRequest) -> HttpResponse:
+def workspace_create(request: WSGIRequest) -> HttpResponse:
     """Create a new workspace."""
     if request.method == "POST":
         name = request.POST.get("name", "").strip()
@@ -86,7 +87,7 @@ def workspace_create(request: HttpRequest) -> HttpResponse:
     return render(request, "workspaces/create.html")
 
 
-def workspace_delete(request: HttpRequest, pk: int) -> HttpResponse:
+def workspace_delete(request: WSGIRequest, pk: int) -> HttpResponse:
     """Delete a workspace."""
     workspace = get_object_or_404(Workspace, pk=pk)
 
@@ -97,7 +98,7 @@ def workspace_delete(request: HttpRequest, pk: int) -> HttpResponse:
     return render(request, "workspaces/confirm_delete.html", {"workspace": workspace})
 
 
-def workspace_scan(request: HttpRequest, pk: int) -> HttpResponse:
+def workspace_scan(request: WSGIRequest, pk: int) -> HttpResponse:
     """Trigger a scan of a workspace's course root."""
     workspace = get_object_or_404(Workspace, pk=pk)
     incremental = request.POST.get("mode", "incremental") != "full"
@@ -128,7 +129,7 @@ def workspace_scan(request: HttpRequest, pk: int) -> HttpResponse:
     )
 
 
-def workspace_edit(request: HttpRequest, pk: int) -> HttpResponse:
+def workspace_edit(request: WSGIRequest, pk: int) -> HttpResponse:
     """Edit workspace name and cover image."""
     workspace = get_object_or_404(Workspace, pk=pk)
 
@@ -143,7 +144,7 @@ def workspace_edit(request: HttpRequest, pk: int) -> HttpResponse:
     return render(request, "workspaces/edit.html", {"form": form, "workspace": workspace})
 
 
-def browse_directories(request: HttpRequest) -> HttpResponse:
+def browse_directories(request: WSGIRequest) -> HttpResponse:
     """
     HTMX partial - browse subdirectories of a given path.
 

@@ -8,7 +8,6 @@ Purpose: Transform discovered course content into a navigable,
 """
 
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Optional
 
 
@@ -30,11 +29,7 @@ class NavigationTree:
     total_nodes: int = 0
 
 
-def build_navigation_tree(
-    files: list[dict],
-    course_relative_path: str,
-    course_name: str,
-) -> NavigationTree:
+def build_navigation_tree(files: list[dict], course_relative_path: str, course_name: str) -> NavigationTree:
     """
     Build a navigation tree from a list of file dictionaries.
 
@@ -57,9 +52,9 @@ def build_navigation_tree(
             current = current[part]
 
     def _build_subtree(
-        subtree: dict,
-        parent_path: str,
-        level: int,
+            subtree: dict,
+            parent_path: str,
+            level: int,
     ) -> list[TreeNode]:
         nodes: list[TreeNode] = []
         entries = sorted(subtree.items())
@@ -124,11 +119,7 @@ def build_navigation_tree(
     )
 
 
-def build_subtree(
-    files: list[dict],
-    parent_path: str,
-    course_relative_path: str,
-) -> list[TreeNode]:
+def build_subtree(files: list[dict], parent_path: str, course_relative_path: str) -> list[TreeNode]:
     """
     Build only a subtree for lazy loading.
 

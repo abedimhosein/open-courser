@@ -9,7 +9,6 @@ Purpose: Track playback state, compute watched percentage,
 from dataclasses import dataclass
 from enum import Enum
 
-
 COMPLETION_THRESHOLD = 95.0
 STARTED_THRESHOLD = 5.0
 
@@ -43,11 +42,7 @@ class PlaybackEvent:
     duration: float | None
 
 
-def calculate_file_progress(
-    watched_seconds: float,
-    total_duration: float | None,
-    last_position: float,
-) -> FileProgress:
+def calculate_file_progress(watched_seconds: float, total_duration: float | None, last_position: float) -> FileProgress:
     """
     Calculate progress for a single media file.
 
@@ -78,10 +73,7 @@ def calculate_file_progress(
     )
 
 
-def calculate_course_progress(
-    file_progresses: list[FileProgress],
-    durations: list[float | None],
-) -> CourseProgress:
+def calculate_course_progress(file_progresses: list[FileProgress], durations: list[float | None]) -> CourseProgress:
     """
     Calculate overall progress for a course.
 
@@ -114,11 +106,8 @@ def calculate_course_progress(
         completed_files=completed_files,
     )
 
-def update_watched_duration(
-    current_watched: float,
-    event: PlaybackEvent,
-    previous_position: float,
-) -> float:
+
+def update_watched_duration(current_watched: float, event: PlaybackEvent, previous_position: float) -> float:
     """
     Calculate incremental watched duration from a playback event.
 

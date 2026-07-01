@@ -12,7 +12,6 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
-
 SUBTITLE_EXTENSIONS = {".srt", ".vtt", ".ass"}
 
 
@@ -70,7 +69,7 @@ def extract_metadata(file_path: str | Path) -> MediaExtractionResult:
             ],
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=300,
         )
     except FileNotFoundError:
         return _extract_metadata_fallback(path)
@@ -142,10 +141,7 @@ def _parse_ffprobe_output(data: dict) -> MediaExtractionResult:
     return MediaExtractionResult(metadata=metadata, is_supported=True)
 
 
-def discover_subtitles(
-    media_path: str | Path,
-    course_root: str | Path,
-) -> list[SubtitleInfo]:
+def discover_subtitles(media_path: str | Path, course_root: str | Path) -> list[SubtitleInfo]:
     """
     Discover subtitle files associated with a media file.
 
@@ -247,7 +243,7 @@ def _find_mdat_end(data: bytes, file_size: int) -> int | None:
     i = 0
     while i < len(data) - 8:
         atom_size = struct.unpack_from(">I", data, i)[0]
-        atom_type = data[i + 4 : i + 8]
+        atom_type = data[i + 4: i + 8]
         if atom_type == b"mdat":
             if atom_size == 1 and i + 16 <= len(data):
                 # 64-bit size
@@ -347,7 +343,7 @@ def _find_mp4_atom(data: bytes, target: bytes) -> int | None:
     i = 0
     while i < len(data) - 8:
         atom_size = struct.unpack_from(">I", data, i)[0]
-        atom_type = data[i + 4 : i + 8]
+        atom_type = data[i + 4: i + 8]
         if atom_type == target:
             return i
         if atom_size == 0:
@@ -394,7 +390,7 @@ def _find_mkv_duration(data: bytes) -> float | None:
     while i < len(data) - 4:
         # Look for Segment element
         if i + 4 <= len(data):
-            possible_id = struct.unpack(">I", data[i : i + 4])[0]
+            possible_id = struct.unpack(">I", data[i: i + 4])[0]
             if possible_id == SEGMENT_ID:
                 seg_size, size_len = _read_ebml_size(data, i + 4)
                 if seg_size is None:
@@ -435,7 +431,7 @@ def _find_mkv_info_duration(data: bytes) -> float | None:
     while i < len(data) - 4:
         # Look for Info element
         if i + 4 <= len(data):
-            possible_id = struct.unpack(">I", data[i : i + 4])[0]
+            possible_id = struct.unpack(">I", data[i: i + 4])[0]
             if possible_id == INFO_ID:
                 info_size, size_len = _read_ebml_size(data, i + 4)
                 if info_size is None:
@@ -445,13 +441,13 @@ def _find_mkv_info_duration(data: bytes) -> float | None:
                 # Search inside Info for Duration
                 while i < info_end - 2:
                     if i + 2 <= len(data):
-                        dur_id = struct.unpack(">H", data[i : i + 2])[0]
+                        dur_id = struct.unpack(">H", data[i: i + 2])[0]
                         if dur_id == DURATION_ID:
                             dur_size, size_len = _read_ebml_size(data, i + 2)
                             if dur_size is None:
                                 return None
                             if dur_size <= 8:
-                                val_data = data[i + 2 + size_len : i + 2 + size_len + dur_size]
+                                val_data = data[i + 2 + size_len: i + 2 + size_len + dur_size]
                                 if len(val_data) >= 8:
                                     raw = struct.unpack(">d", val_data[:8])[0]
                                     # MKV Duration is in milliseconds, convert to seconds

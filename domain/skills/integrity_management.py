@@ -50,10 +50,7 @@ class IntegrityReport:
         return any(i.severity == Severity.ERROR for i in self.issues)
 
 
-def validate_file_index(
-    db_files: list[dict],
-    filesystem_files: list[dict],
-) -> IntegrityReport:
+def validate_file_index(db_files: list[dict], filesystem_files: list[dict]) -> IntegrityReport:
     """
     Compare database file records with actual filesystem content.
 
@@ -112,10 +109,7 @@ def validate_file_index(
     )
 
 
-def detect_duplicates(
-    items: list[dict],
-    key_field: str = "relative_path",
-) -> IntegrityReport:
+def detect_duplicates(items: list[dict], key_field: str = "relative_path") -> IntegrityReport:
     """
     Detect duplicate entries in a list of items.
     """

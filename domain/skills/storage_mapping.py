@@ -9,8 +9,8 @@ This is the foundational skill used by all domain agents that
 need to access the filesystem.
 """
 
-from pathlib import Path
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -32,10 +32,7 @@ class MissingRootError(Exception):
     """Raised when the course root does not exist."""
 
 
-def validate_and_resolve(
-    course_root: str | Path,
-    relative_path: str,
-) -> PathValidationResult:
+def validate_and_resolve(course_root: str | Path, relative_path: str) -> PathValidationResult:
     """
     Resolve a relative path against a course root with security validation.
 
@@ -76,10 +73,7 @@ def validate_and_resolve(
     )
 
 
-def resolve_absolute(
-    course_root: str | Path,
-    relative_path: str,
-) -> Path:
+def resolve_absolute(course_root: str | Path, relative_path: str) -> Path:
     """
     Resolve a relative path to an absolute path with full validation.
 
@@ -128,4 +122,3 @@ def _is_within_root(resolved: Path, root: Path) -> bool:
         return True
     except ValueError:
         return False
-

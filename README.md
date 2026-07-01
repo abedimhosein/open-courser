@@ -2,7 +2,7 @@
 
 Offline course progress tracker — scan local media courses, browse files, track watch progress, and manage completion.
 
-Built with Django 5.2, HTMX, Alpine.js, and Bootstrap 5 (dark theme).
+Built with Django 5.2, HTMX, Alpine.js, Bootstrap 5 (dark theme), and Font Awesome 6.
 
 ---
 
@@ -24,7 +24,9 @@ domain/skills/       Pure domain logic (no Django imports)
   integrity_management.py  Consistency checks
   background_processing.py Thread-pool job runner
 templates/           Django templates (HTMX partials, Bootstrap)
+static/              Static assets (logo.svg)
 tests/               pytest unit tests for domain skills
+media/               User-uploaded cover images
 ```
 
 Each app follows a **presentation → application → domain** layering:
@@ -36,16 +38,20 @@ Each app follows a **presentation → application → domain** layering:
 
 ## Features
 
-- **Workspace management** — add/remove workspaces pointing to local directories
+- **Workspace management** — add/remove/edit workspaces with cover images, sortable by name or creation date
+- **Course management** — rename courses, upload cover images, sort by name or progress
 - **Filesystem scanning** — incremental and full scans detect new, modified, and deleted files
-- **Course browsing** — view courses as cards with progress bars, sort by name or progress
+- **Course browsing** — view courses as cards with progress bars, numbered and paginated (15/page)
 - **File player** — browser-native video/audio player with resume, position tracking, auto-complete on end
 - **Progress tracking** — per-file watched duration, completion toggle, course-level aggregation
 - **Metadata extraction** — ffprobe-based media info with pure-Python fallback (MP4/MKV header parsing)
 - **HTMX-driven UI** — no full page reloads for scan, completion toggle, or progress updates
 - **Cover images** — upload cover art for workspaces and courses
-- **Responsive** — mobile-friendly layout down to 360px viewport
-- **Docker** — ready to deploy with Docker Compose
+- **Responsive** — mobile-friendly layout down to 360px viewport (Galaxy S8+)
+- **Pagination** — 15 items per page on workspace list and course list
+- **Professional UI** — Font Awesome 6 icons on all buttons, custom SVG logo
+- **Docker** — ready to deploy with Docker Compose, host filesystem bind mount
+- **Dark theme** — Bootstrap 5 dark mode throughout
 
 ---
 
@@ -65,29 +71,49 @@ python manage.py runserver
 ### Docker
 
 ```bash
+# Set your courses directory (optional, defaults to ./courses)
+echo "COURSE_ROOT=C:\Users\me\Courses" > .env
+
 docker compose up -d
 ```
 
-The Docker image includes ffprobe for richer metadata extraction.
+Set `COURSE_ROOT` in `.env` to the absolute path of your courses directory. It is mounted at `/courses` inside the container. When creating a workspace in Docker, use `course_root = "/courses"`.
 
 ---
 
 ## Usage
 
-1. Create a **Workspace** pointing to a local directory containing course folders
-2. Click **Scan Now** to discover courses and media files
-3. Browse a course, play files, track progress
-4. Use **Mark Complete / Undo** to manually set completion
+1. Create a **Workspace** — give it a name and point it to a local directory containing course folders
+2. Upload a **cover image** — optional, via the Edit page for each workspace or course
+3. Click **Scan Now** — discovers courses and media files, extracts metadata
+4. Browse courses — cards show progress bars, sortable by name or progress, paginated 15/page
+5. Play a file — browser-native player with auto-resume, position tracking every 3 seconds
+6. Track progress — use **Mark Complete / Undo** buttons, or let the player auto-complete on end
+7. Edit titles & covers — use the **Edit** button on any workspace or course
 
 ---
 
 ## Tests
 
 ```bash
-python -m pytest --tb=short -q          # all tests
+python -m pytest --tb=short -q          # all tests (40+)
 python -m pytest tests/                 # domain skill tests only
 python manage.py test                   # Django integration tests
 ```
+
+---
+
+## Docker
+
+The Docker image includes ffprobe for richer metadata extraction. The `.dockerignore` keeps the build context lean by excluding virtualenvs, caches, and IDE files.
+
+| Volume | Purpose |
+|--------|---------|
+| `./data:/app/data` | SQLite database persistence |
+| `./media:/app/media` | Uploaded cover images |
+| `${COURSE_ROOT}:/courses:ro` | Host course directory (read-only) |
+
+---
 
 ## Developer
 

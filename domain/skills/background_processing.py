@@ -173,4 +173,3 @@ class BackgroundProcessor:
     def _decrement_workers(self) -> None:
         with self._lock:
             self._worker_count -= 1
-

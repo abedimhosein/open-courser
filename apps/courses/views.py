@@ -1,6 +1,9 @@
-from django.http import HttpRequest, HttpResponse, HttpResponseNotAllowed
-from django.shortcuts import render, get_object_or_404, redirect
+import re
+
+from django.core.handlers.wsgi import WSGIRequest
 from django.forms import ModelForm
+from django.http import HttpResponse, HttpResponseNotAllowed
+from django.shortcuts import render, get_object_or_404, redirect
 
 from apps.courses.models import Course, CourseFile
 from apps.media.services.extractor import extract_and_save_metadata
@@ -13,16 +16,21 @@ from apps.progress.services.tracker import (
 )
 
 
+def course_sort_key(s):
+    return [int(part) if part.isdigit() else part.lower() for part in re.split(r'(\d+)', s.name)]
+
+
 class CourseEditForm(ModelForm):
     class Meta:
         model = Course
         fields = ["name", "cover_image"]
 
 
-def course_detail(request: HttpRequest, pk: int) -> HttpResponse:
+def course_detail(request: WSGIRequest, pk: int) -> HttpResponse:
     """View a course with its file tree and progress."""
     course = get_object_or_404(Course.objects.select_related("workspace"), pk=pk)
-    files = CourseFile.objects.filter(course=course).order_by("relative_path")
+    files = CourseFile.objects.filter(course=course).order_by("name")
+    files = sorted(files, key=course_sort_key)
     progress = get_course_progress(course)
 
     file_progresses = [get_file_progress(cf) for cf in files]
@@ -39,7 +47,7 @@ def course_detail(request: HttpRequest, pk: int) -> HttpResponse:
     )
 
 
-def course_edit(request: HttpRequest, pk: int) -> HttpResponse:
+def course_edit(request: WSGIRequest, pk: int) -> HttpResponse:
     """Edit course name and cover image."""
     course = get_object_or_404(Course, pk=pk)
 
@@ -54,7 +62,7 @@ def course_edit(request: HttpRequest, pk: int) -> HttpResponse:
     return render(request, "courses/edit.html", {"form": form, "course": course})
 
 
-def course_progress_partial(request: HttpRequest, pk: int) -> HttpResponse:
+def course_progress_partial(request: WSGIRequest, pk: int) -> HttpResponse:
     """HTMX partial - returns just the course progress card."""
     course = get_object_or_404(Course, pk=pk)
     progress = get_course_progress(course)
@@ -66,7 +74,7 @@ def course_progress_partial(request: HttpRequest, pk: int) -> HttpResponse:
     )
 
 
-def course_files_partial(request: HttpRequest, pk: int) -> HttpResponse:
+def course_files_partial(request: WSGIRequest, pk: int) -> HttpResponse:
     """HTMX partial - returns just the file list for a course."""
     course = get_object_or_404(Course, pk=pk)
     files = CourseFile.objects.filter(course=course).order_by("relative_path")
@@ -83,7 +91,7 @@ def course_files_partial(request: HttpRequest, pk: int) -> HttpResponse:
     )
 
 
-def toggle_complete(request: HttpRequest, course_pk: int, file_pk: int) -> HttpResponse:
+def toggle_complete(request: WSGIRequest, course_pk: int, file_pk: int) -> HttpResponse:
     """Toggle completion status for a course file and return updated file list."""
     course = get_object_or_404(Course, pk=course_pk)
     course_file = get_object_or_404(CourseFile, pk=file_pk, course=course)
@@ -109,7 +117,7 @@ def toggle_complete(request: HttpRequest, course_pk: int, file_pk: int) -> HttpR
     return response
 
 
-def toggle_file_complete(request: HttpRequest, course_pk: int, file_pk: int) -> HttpResponse:
+def toggle_file_complete(request: WSGIRequest, course_pk: int, file_pk: int) -> HttpResponse:
     """Toggle completion status and return updated progress panel."""
     course = get_object_or_404(Course, pk=course_pk)
     course_file = get_object_or_404(CourseFile, pk=file_pk, course=course)
@@ -144,7 +152,7 @@ def _toggle_file_completion(course_file: CourseFile) -> None:
         mark_completed(course_file)
 
 
-def file_detail(request: HttpRequest, course_pk: int, file_pk: int) -> HttpResponse:
+def file_detail(request: WSGIRequest, course_pk: int, file_pk: int) -> HttpResponse:
     """View a single course file."""
     course = get_object_or_404(Course, pk=course_pk)
     file = get_object_or_404(CourseFile, pk=file_pk, course=course)

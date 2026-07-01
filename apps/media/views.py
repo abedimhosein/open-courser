@@ -1,14 +1,15 @@
 import mimetypes
 from pathlib import Path
 
-from django.http import HttpRequest, HttpResponse, FileResponse, Http404
+from django.core.handlers.wsgi import WSGIRequest
+from django.http import HttpResponse, FileResponse, Http404
 from django.shortcuts import get_object_or_404
 
 from apps.courses.models import CourseFile
 from domain.skills.storage_mapping import resolve_absolute
 
 
-def serve_media(request: HttpRequest, course_pk: int, file_pk: int) -> HttpResponse:
+def serve_media(request: WSGIRequest, course_pk: int, file_pk: int) -> HttpResponse:
     """
     Serve a media file for playback.
 
