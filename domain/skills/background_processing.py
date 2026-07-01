@@ -174,14 +174,3 @@ class BackgroundProcessor:
         with self._lock:
             self._worker_count -= 1
 
-
-# Global processor instance
-_default_processor: BackgroundProcessor | None = None
-
-
-def get_processor(max_workers: int = 4) -> BackgroundProcessor:
-    """Get or create the default BackgroundProcessor instance."""
-    global _default_processor
-    if _default_processor is None:
-        _default_processor = BackgroundProcessor(max_workers=max_workers)
-    return _default_processor

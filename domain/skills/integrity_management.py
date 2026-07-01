@@ -8,7 +8,6 @@ Purpose: Detect inconsistencies between filesystem state, indexed data,
 
 from dataclasses import dataclass, field
 from enum import Enum
-from pathlib import Path
 
 
 class Severity(Enum):
@@ -109,56 +108,6 @@ def validate_file_index(
     return IntegrityReport(
         issues=issues,
         total_checked=len(db_paths | fs_paths),
-        total_issues=len(issues),
-    )
-
-
-def validate_progress_consistency(
-    watch_history: list[dict],
-    file_durations: dict[str, float | None],
-) -> IntegrityReport:
-    """
-    Validate that progress records are consistent with media durations.
-    """
-    issues: list[IntegrityIssue] = []
-
-    for record in watch_history:
-        rp = record.get("relative_path", "")
-        position = record.get("position", 0)
-        duration = file_durations.get(rp)
-
-        if duration is not None and duration > 0:
-            if position > duration:
-                issues.append(
-                    IntegrityIssue(
-                        issue_type=IssueType.INVALID_PROGRESS,
-                        severity=Severity.ERROR,
-                        message=f"Watch position exceeds duration for: {rp}",
-                        details={
-                            "relative_path": rp,
-                            "position": position,
-                            "duration": duration,
-                        },
-                    )
-                )
-
-            pct = (position / duration) * 100
-            if pct > 100:
-                issues.append(
-                    IntegrityIssue(
-                        issue_type=IssueType.INVALID_PROGRESS,
-                        severity=Severity.WARNING,
-                        message=f"Progress exceeds 100% for: {rp}",
-                        details={
-                            "relative_path": rp,
-                            "percentage": pct,
-                        },
-                    )
-                )
-
-    return IntegrityReport(
-        issues=issues,
-        total_checked=len(watch_history),
         total_issues=len(issues),
     )
 

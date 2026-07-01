@@ -8,7 +8,6 @@ from apps.progress.services.tracker import (
     get_file_progress,
     reset_file_progress,
 )
-from domain.skills.progress_tracking import validate_playback_position
 
 
 def update_position(request: HttpRequest, file_pk: int) -> HttpResponse:

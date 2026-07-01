@@ -114,22 +114,6 @@ def calculate_course_progress(
         completed_files=completed_files,
     )
 
-
-def determine_status_from_percentage(pct: float | None) -> LearningStatus:
-    """
-    Determine learning status from a watched percentage.
-    """
-    if pct is None:
-        return LearningStatus.NOT_STARTED
-
-    if pct >= COMPLETION_THRESHOLD:
-        return LearningStatus.COMPLETED
-    if pct >= STARTED_THRESHOLD:
-        return LearningStatus.IN_PROGRESS
-
-    return LearningStatus.NOT_STARTED
-
-
 def update_watched_duration(
     current_watched: float,
     event: PlaybackEvent,

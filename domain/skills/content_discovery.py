@@ -11,7 +11,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
 
-
 HIDDEN_PREFIXES = (".", "_")
 HIDDEN_NAMES = {
     "thumbs.db",
@@ -142,10 +141,7 @@ def _walk_scandir(root: Path) -> Iterator[os.DirEntry]:
                 stack.append(entry.path)
 
 
-def scan_incremental(
-    root_path: str | Path,
-    previous_snapshot: dict[str, tuple[int | None, float | None]],
-) -> ScanResult:
+def scan_incremental(root_path: str | Path, previous_snapshot: dict[str, tuple[int | None, float | None]]) -> ScanResult:
     """
     Perform an incremental scan, detecting changes from a previous snapshot.
 

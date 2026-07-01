@@ -8,7 +8,6 @@ Purpose: Orchestrate progress tracking operations and persist
          watch history to the database.
 """
 
-from django.db import transaction
 from django.utils import timezone
 
 from apps.courses.models import Course, CourseFile
@@ -25,8 +24,8 @@ from domain.skills.progress_tracking import (
 
 
 def record_playback_position(
-    course_file: CourseFile,
-    position: float,
+        course_file: CourseFile,
+        position: float,
 ) -> WatchHistory | None:
     """
     Record a playback position update for a course file.

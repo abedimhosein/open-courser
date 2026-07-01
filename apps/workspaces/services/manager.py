@@ -34,15 +34,3 @@ def delete_workspace(workspace: Workspace) -> None:
     """
     workspace.delete()
 
-
-def get_all_workspaces():
-    """Get all workspaces ordered by name."""
-    return Workspace.objects.all()
-
-
-def get_workspace_by_id(workspace_id: int) -> Workspace | None:
-    """Get a workspace by ID."""
-    try:
-        return Workspace.objects.get(pk=workspace_id)
-    except Workspace.DoesNotExist:
-        return None

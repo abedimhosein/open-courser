@@ -7,8 +7,9 @@ Delegates to: File System Agent (Content Discovery)
 Purpose: Orchestrate filesystem scanning and persist results
 as Course and CourseFile records.
 """
+from __future__ import annotations
 
-from typing import Tuple
+import mimetypes
 
 from django.db import transaction
 
@@ -19,15 +20,11 @@ from domain.skills.content_discovery import (
     ScanResult,
     scan_directory,
     scan_incremental,
-    build_snapshot,
 )
 
 
 @transaction.atomic
-def scan_workspace(
-        workspace: Workspace,
-        incremental: bool = True,
-) -> ScanResult:
+def scan_workspace(workspace: Workspace, incremental: bool = True) -> ScanResult:
     """
     Scan a workspace's course root and sync database records.
 
@@ -94,10 +91,7 @@ def _get_top_level_directories(scan_result: ScanResult) -> list[str]:
     return sorted(top_level)
 
 
-def _sync_course_files(
-        workspace: Workspace,
-        scan_result: ScanResult,
-) -> None:
+def _sync_course_files(workspace: Workspace, scan_result: ScanResult) -> None:
     """
     Synchronize CourseFile records with the scan result.
     """
@@ -107,9 +101,7 @@ def _sync_course_files(
     }
 
     existing_files: dict[tuple[int, str], CourseFile] = {}
-    for cf in CourseFile.objects.filter(course__workspace=workspace).select_related(
-            "course"
-    ):
+    for cf in CourseFile.objects.filter(course__workspace=workspace).select_related("course"):
         existing_files[(cf.course_id, cf.relative_path)] = cf
 
     seen_keys: set[tuple[int, str]] = set()
@@ -136,12 +128,14 @@ def _sync_course_files(
             if changed:
                 cf.save(update_fields=["file_size", "file_type", "updated_at"])
         else:
+            mime_type, _ = mimetypes.guess_type(file_info.name)
             CourseFile.objects.create(
                 course=course,
                 name=file_info.name,
                 relative_path=file_info.relative_path,
                 file_type=file_type,
                 file_size=file_info.size,
+                mime_type=mime_type or "",
             )
 
     for key, cf in existing_files.items():

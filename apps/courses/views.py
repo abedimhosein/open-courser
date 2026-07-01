@@ -1,7 +1,8 @@
-from django.shortcuts import render, get_object_or_404
 from django.http import HttpRequest, HttpResponse, HttpResponseNotAllowed
+from django.shortcuts import render, get_object_or_404
 
 from apps.courses.models import Course, CourseFile
+from apps.media.services.extractor import extract_and_save_metadata
 from apps.progress.models import WatchHistory
 from apps.progress.services.tracker import (
     get_course_progress,
@@ -127,10 +128,11 @@ def file_detail(request: HttpRequest, course_pk: int, file_pk: int) -> HttpRespo
     file = get_object_or_404(CourseFile, pk=file_pk, course=course)
 
     from domain.skills.storage_mapping import resolve_absolute
-    from domain.skills.media_understanding import extract_metadata, discover_subtitles
+    from domain.skills.media_understanding import discover_subtitles
 
     absolute_path = resolve_absolute(course.workspace.course_root, file.relative_path)
-    metadata_result = extract_metadata(absolute_path)
+
+    metadata_model = extract_and_save_metadata(file)
     subtitles = discover_subtitles(absolute_path, course.workspace.course_root)
 
     progress = get_file_progress(file)
@@ -142,7 +144,7 @@ def file_detail(request: HttpRequest, course_pk: int, file_pk: int) -> HttpRespo
             "course": course,
             "file": file,
             "file_path": str(absolute_path),
-            "metadata": metadata_result.metadata,
+            "metadata": metadata_model,
             "subtitles": subtitles,
             "progress": progress,
         },

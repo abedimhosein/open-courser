@@ -129,9 +129,3 @@ def _is_within_root(resolved: Path, root: Path) -> bool:
     except ValueError:
         return False
 
-
-def get_relative_path(absolute_path: Path, course_root: Path) -> str:
-    """Compute the relative path from course_root to absolute_path."""
-    resolved_abs = absolute_path.resolve()
-    resolved_root = course_root.resolve()
-    return normalize_relative_path(str(resolved_abs.relative_to(resolved_root)))

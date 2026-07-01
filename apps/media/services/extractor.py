@@ -8,7 +8,7 @@ Purpose: Orchestrate media metadata extraction using ffprobe and
          persist results to the database.
 """
 
-from pathlib import Path
+import mimetypes
 
 from apps.courses.models import CourseFile
 from apps.media.models import MediaMetadata
@@ -53,23 +53,26 @@ def extract_and_save_metadata(course_file: CourseFile) -> MediaMetadata | None:
         },
     )
 
-    # Update the CourseFile duration if available
-    if result.metadata and result.metadata.duration:
-        CourseFile.objects.filter(pk=course_file.pk).update(
-            duration=result.metadata.duration
-        )
+    # Update the CourseFile with extracted metadata — only set fields
+    # when we have actual values to avoid wiping existing data with None.
+    if result.metadata:
+        update_fields = {
+            "metadata": {
+                "codec": result.metadata.codec,
+                "width": result.metadata.width,
+                "height": result.metadata.height,
+                "bitrate": result.metadata.bitrate,
+                "file_format": result.metadata.file_format,
+                "has_audio": result.metadata.has_audio,
+                "has_video": result.metadata.has_video,
+            },
+        }
+        if result.metadata.duration is not None:
+            update_fields["duration"] = result.metadata.duration
+        mime_type, _ = mimetypes.guess_type(str(absolute_path))
+        if mime_type:
+            update_fields["mime_type"] = mime_type
+
+        CourseFile.objects.filter(pk=course_file.pk).update(**update_fields)
 
     return metadata
-
-
-def batch_extract_metadata(course_files: list[CourseFile]) -> int:
-    """
-    Extract metadata for a list of CourseFiles.
-
-    Returns the count of successfully extracted files.
-    """
-    count = 0
-    for cf in course_files:
-        if extract_and_save_metadata(cf) is not None:
-            count += 1
-    return count
