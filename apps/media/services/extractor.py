@@ -40,24 +40,34 @@ def extract_and_save_metadata(course_file: CourseFile) -> MediaMetadata | None:
 
     subtitles = discover_subtitles(absolute_path, workspace.course_root)
 
+    md = result.metadata
     metadata, _ = MediaMetadata.objects.update_or_create(
         relative_path=course_file.relative_path,
         defaults={
-            "duration": result.metadata.duration if result.metadata else None,
-            "codec": result.metadata.codec if result.metadata else "",
-            "width": result.metadata.width if result.metadata else None,
-            "height": result.metadata.height if result.metadata else None,
-            "bitrate": result.metadata.bitrate if result.metadata else None,
-            "file_format": result.metadata.file_format if result.metadata else "",
+            "duration": md.duration if md else None,
+            "codec": (md.codec or "") if md else "",
+            "width": md.width if md else None,
+            "height": md.height if md else None,
+            "bitrate": md.bitrate if md else None,
+            "file_format": (md.file_format or "") if md else "",
             "subtitle_paths": [s.relative_path for s in subtitles],
         },
     )
 
-    # Update the CourseFile with extracted metadata — only set fields
-    # when we have actual values to avoid wiping existing data with None.
+    # Update the CourseFile with extracted metadata
     if result.metadata:
-        update_fields = {
-            "metadata": {
+        update_fields = {}
+
+        if result.metadata.duration is not None:
+            update_fields["duration"] = result.metadata.duration
+
+        mime_type, _ = mimetypes.guess_type(str(absolute_path))
+        if mime_type:
+            update_fields["mime_type"] = mime_type
+
+        meta = {
+            k: v
+            for k, v in {
                 "codec": result.metadata.codec,
                 "width": result.metadata.width,
                 "height": result.metadata.height,
@@ -65,14 +75,13 @@ def extract_and_save_metadata(course_file: CourseFile) -> MediaMetadata | None:
                 "file_format": result.metadata.file_format,
                 "has_audio": result.metadata.has_audio,
                 "has_video": result.metadata.has_video,
-            },
+            }.items()
+            if v is not None and v is not False
         }
-        if result.metadata.duration is not None:
-            update_fields["duration"] = result.metadata.duration
-        mime_type, _ = mimetypes.guess_type(str(absolute_path))
-        if mime_type:
-            update_fields["mime_type"] = mime_type
+        if meta:
+            update_fields["metadata"] = meta
 
-        CourseFile.objects.filter(pk=course_file.pk).update(**update_fields)
+        if update_fields:
+            CourseFile.objects.filter(pk=course_file.pk).update(**update_fields)
 
     return metadata

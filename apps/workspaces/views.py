@@ -5,6 +5,7 @@ from django.http import HttpRequest, HttpResponse
 
 from apps.courses.services.scanner import scan_workspace
 from apps.courses.models import Course
+from apps.progress.services.tracker import get_course_progress
 from apps.workspaces.models import Workspace
 from apps.workspaces.services.manager import create_workspace, delete_workspace
 
@@ -15,14 +16,34 @@ def workspace_list(request: HttpRequest) -> HttpResponse:
     return render(request, "workspaces/list.html", {"workspaces": workspaces})
 
 
+def sort_course_list(courses, sort_by: str) -> list:
+    """Build a sorted course_list with progress data."""
+    course_list = [
+        {"course": c, "progress": get_course_progress(c)}
+        for c in courses
+    ]
+    if sort_by == "progress":
+        course_list.sort(
+            key=lambda x: (x["progress"] or {}).get("overall_percentage", 0) or 0,
+            reverse=True,
+        )
+    else:
+        course_list.sort(key=lambda x: x["course"].name.lower())
+    return course_list
+
+
 def workspace_detail(request: HttpRequest, pk: int) -> HttpResponse:
     """View a workspace with its courses."""
     workspace = get_object_or_404(Workspace, pk=pk)
+    sort_by = request.GET.get("sort", "name")
+    if sort_by not in ("name", "progress"):
+        sort_by = "name"
     courses = Course.objects.filter(workspace=workspace)
+    course_list = sort_course_list(courses, sort_by)
     return render(
         request,
         "workspaces/detail.html",
-        {"workspace": workspace, "courses": courses},
+        {"workspace": workspace, "course_list": course_list, "current_sort": sort_by},
     )
 
 
@@ -67,16 +88,21 @@ def workspace_scan(request: HttpRequest, pk: int) -> HttpResponse:
     """Trigger a scan of a workspace's course root."""
     workspace = get_object_or_404(Workspace, pk=pk)
     incremental = request.POST.get("mode", "incremental") != "full"
+    sort_by = request.GET.get("sort", "name")
+    if sort_by not in ("name", "progress"):
+        sort_by = "name"
 
     scan_result = scan_workspace(workspace, incremental=incremental)
 
     courses = Course.objects.filter(workspace=workspace)
+    course_list = sort_course_list(courses, sort_by)
     return render(
         request,
         "workspaces/detail.html",
         {
             "workspace": workspace,
-            "courses": courses,
+            "course_list": course_list,
+            "current_sort": sort_by,
             "scan_summary": {
                 "added": len(scan_result.change_set.added) if scan_result.change_set else 0,
                 "modified": len(scan_result.change_set.modified) if scan_result.change_set else 0,

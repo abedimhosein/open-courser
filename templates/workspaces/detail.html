@@ -4,27 +4,32 @@
 
 {% block content %}
 <nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
+    <ol class="breadcrumb flex-nowrap text-truncate">
         <li class="breadcrumb-item"><a href="{% url 'workspace_list' %}">Workspaces</a></li>
-        <li class="breadcrumb-item active">{{ workspace.name }}</li>
+        <li class="breadcrumb-item active text-truncate">{{ workspace.name }}</li>
     </ol>
 </nav>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="mb-1">{{ workspace.name }}</h1>
-        <code class="text-muted">{{ workspace.course_root }}</code>
+<div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4 gap-2">
+    <div class="min-w-0">
+        <h1 class="mb-1 text-break">{{ workspace.name }}</h1>
+        <code class="text-muted small text-break">{{ workspace.course_root }}</code>
     </div>
-    <div>
+    <div class="flex-shrink-0">
         <form method="post" action="{% url 'workspace_scan' workspace.pk %}" class="d-inline">
             {% csrf_token %}
-            <button type="submit" class="btn btn-success">
+            <button type="submit" class="btn btn-success btn-sm">
                 <span class="spinner-border spinner-border-sm htmx-indicator" role="status"></span>
                 Scan Now
             </button>
         </form>
-        <a href="{% url 'workspace_delete' workspace.pk %}" class="btn btn-outline-danger">Delete</a>
+        <a href="{% url 'workspace_delete' workspace.pk %}" class="btn btn-outline-danger btn-sm">Delete</a>
     </div>
+</div>
+
+<div class="btn-group btn-group-sm mb-3" role="group">
+    <a href="?sort=name" class="btn btn-outline-secondary {% if current_sort == 'name' %}active{% endif %}">Name</a>
+    <a href="?sort=progress" class="btn btn-outline-secondary {% if current_sort == 'progress' %}active{% endif %}">Progress</a>
 </div>
 
 {% if scan_summary %}
@@ -38,19 +43,36 @@
 </div>
 {% endif %}
 
-{% if courses %}
+{% if course_list %}
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-    {% for course in courses %}
+    {% for item in course_list %}
     <div class="col">
         <div class="card h-100">
             <div class="card-body">
-                <h5 class="card-title">{{ course.name }}</h5>
+                <h5 class="card-title"><a href="{% url 'course_detail' item.course.pk %}" class="text-decoration-none">{{ item.course.name }}</a></h5>
                 <p class="card-text text-muted small">
-                    <code>{{ course.relative_path }}</code>
+                    <code>{{ item.course.relative_path }}</code>
                 </p>
+                {% if item.progress %}
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>{{ item.progress.completed_files }}/{{ item.progress.total_files }} files</span>
+                        <span>{{ item.progress.overall_percentage|floatformat:1 }}%</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar" role="progressbar"
+                             style="width: {{ item.progress.overall_percentage|floatformat:1 }}%"
+                             aria-valuenow="{{ item.progress.overall_percentage|floatformat:0 }}"
+                             aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="mt-3 text-muted small">No files</div>
+                {% endif %}
             </div>
             <div class="card-footer">
-                <a href="{% url 'course_detail' course.pk %}" class="btn btn-sm btn-outline-primary">
+                <a href="{% url 'course_detail' item.course.pk %}" class="btn btn-sm btn-outline-primary">
                     Browse Course
                 </a>
             </div>

@@ -14,6 +14,7 @@ import mimetypes
 from django.db import transaction
 
 from apps.courses.models import Course, CourseFile
+from apps.media.services.extractor import extract_and_save_metadata
 from apps.workspaces.models import Workspace
 from domain.skills.content_discovery import (
     FileInfo,
@@ -127,9 +128,11 @@ def _sync_course_files(workspace: Workspace, scan_result: ScanResult) -> None:
                 changed = True
             if changed:
                 cf.save(update_fields=["file_size", "file_type", "updated_at"])
+            if cf.duration is None and file_type in ("video", "audio"):
+                extract_and_save_metadata(cf)
         else:
             mime_type, _ = mimetypes.guess_type(file_info.name)
-            CourseFile.objects.create(
+            cf = CourseFile.objects.create(
                 course=course,
                 name=file_info.name,
                 relative_path=file_info.relative_path,
@@ -137,6 +140,8 @@ def _sync_course_files(workspace: Workspace, scan_result: ScanResult) -> None:
                 file_size=file_info.size,
                 mime_type=mime_type or "",
             )
+            if file_type in ("video", "audio"):
+                extract_and_save_metadata(cf)
 
     for key, cf in existing_files.items():
         if key not in seen_keys:

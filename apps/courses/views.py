@@ -132,8 +132,11 @@ def file_detail(request: HttpRequest, course_pk: int, file_pk: int) -> HttpRespo
 
     absolute_path = resolve_absolute(course.workspace.course_root, file.relative_path)
 
-    metadata_model = extract_and_save_metadata(file)
-    subtitles = discover_subtitles(absolute_path, course.workspace.course_root)
+    metadata_model = None
+    subtitles = []
+    if file.file_type in ("video", "audio"):
+        metadata_model = extract_and_save_metadata(file)
+        subtitles = discover_subtitles(absolute_path, course.workspace.course_root)
 
     progress = get_file_progress(file)
 

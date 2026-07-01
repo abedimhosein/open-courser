@@ -4,15 +4,15 @@
 
 {% block content %}
 <nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
+    <ol class="breadcrumb flex-nowrap text-truncate">
         <li class="breadcrumb-item"><a href="{% url 'workspace_list' %}">Workspaces</a></li>
         <li class="breadcrumb-item"><a href="{% url 'workspace_detail' course.workspace.pk %}">{{ course.workspace.name }}</a></li>
         <li class="breadcrumb-item"><a href="{% url 'course_detail' course.pk %}">{{ course.name }}</a></li>
-        <li class="breadcrumb-item active">{{ file.name }}</li>
+        <li class="breadcrumb-item active text-truncate">{{ file.name }}</li>
     </ol>
 </nav>
 
-<div class="row">
+<div class="row g-3">
     <div class="col-lg-8">
         <div class="card mb-4">
             <div class="card-body p-0">
@@ -20,7 +20,7 @@
                 <video id="media-player" class="w-100" controls
                        data-file-pk="{{ file.pk }}"
                        data-course-pk="{{ course.pk }}"
-                       style="max-height: 70vh;"
+                       style="max-height: 50vh;"
                        {% if progress.last_position %}data-resume="{{ progress.last_position }}"{% endif %}>
                     <source src="{% url 'serve_media' course.pk file.pk %}" type="{{ file.mime_type }}">
                     {% for sub in subtitles %}

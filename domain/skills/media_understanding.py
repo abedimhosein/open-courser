@@ -7,6 +7,7 @@ Purpose: Extract media metadata using ffprobe, discover associated
 """
 
 import json
+import struct
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -72,11 +73,7 @@ def extract_metadata(file_path: str | Path) -> MediaExtractionResult:
             timeout=30,
         )
     except FileNotFoundError:
-        return MediaExtractionResult(
-            metadata=None,
-            error="ffprobe not found. Install ffmpeg.",
-            is_supported=False,
-        )
+        return _extract_metadata_fallback(path)
     except subprocess.TimeoutExpired:
         return MediaExtractionResult(
             metadata=None,
@@ -213,3 +210,254 @@ def _safe_int(value: object) -> int | None:
         return int(value)
     except (ValueError, TypeError):
         return None
+
+
+MEDIA_EXTENSIONS = {
+    ".mp4", ".m4v", ".m4a", ".mov", ".mkv",
+    ".webm", ".avi", ".mp3", ".wav", ".flac", ".aac", ".ogg",
+}
+
+
+def _extract_metadata_fallback(path: Path) -> MediaExtractionResult:
+    """Extract basic metadata without ffprobe by parsing file headers."""
+    ext = path.suffix.lower()
+    file_format = ext.lstrip(".")
+
+    if ext not in MEDIA_EXTENSIONS:
+        return MediaExtractionResult(
+            metadata=None,
+            error=f"No metadata extractor for {ext} files",
+            is_supported=False,
+        )
+
+    if ext in (".mp4", ".m4v", ".m4a", ".mov"):
+        return _parse_mp4_header(path, file_format)
+
+    if ext == ".mkv":
+        return _parse_mkv_header(path, file_format)
+
+    return MediaExtractionResult(
+        metadata=MediaMetadata(file_format=file_format or None),
+        is_supported=True,
+    )
+
+
+def _find_mdat_end(data: bytes, file_size: int) -> int | None:
+    """Find the end of the mdat atom to locate where moov should follow."""
+    i = 0
+    while i < len(data) - 8:
+        atom_size = struct.unpack_from(">I", data, i)[0]
+        atom_type = data[i + 4 : i + 8]
+        if atom_type == b"mdat":
+            if atom_size == 1 and i + 16 <= len(data):
+                # 64-bit size
+                extended_size = struct.unpack_from(">Q", data, i + 8)[0]
+                return i + extended_size
+            return i + atom_size
+        if atom_size == 0:
+            break
+        i += atom_size
+    return None
+
+
+def _parse_mp4_header(path: Path, file_format: str) -> MediaExtractionResult:
+    """Extract duration from MP4/M4V/MOV file by parsing the mvhd atom."""
+    try:
+        file_size = path.stat().st_size
+        read_size = min(file_size, 4 * 1024 * 1024)  # up to 4MB for moov
+        with open(path, "rb") as f:
+            head = f.read(min(file_size, 65536))
+            # Find mdat end to locate moov (typically after mdat)
+            mdat_end = _find_mdat_end(head, file_size)
+            if mdat_end is not None and mdat_end < file_size:
+                moov_size = min(file_size - mdat_end, read_size)
+                f.seek(mdat_end)
+                data = f.read(moov_size)
+            elif file_size > 65536:
+                # Fallback: read end of file
+                tail_size = min(file_size, read_size)
+                f.seek(file_size - tail_size)
+                data = f.read(tail_size)
+            else:
+                data = head
+    except OSError:
+        return MediaExtractionResult(
+            metadata=None,
+            error=f"Cannot read file: {path}",
+            is_supported=False,
+        )
+
+    moov_start = _find_mp4_atom(data, b"moov")
+    if moov_start is None:
+        return MediaExtractionResult(
+            metadata=MediaMetadata(file_format=file_format),
+            is_supported=True,
+        )
+
+    # Read up to 8KB from moov atom to find mvhd
+    moov_data = data[moov_start + 8:]
+    mvhd_start = _find_mp4_atom(moov_data, b"mvhd")
+    if mvhd_start is None:
+        return MediaExtractionResult(
+            metadata=MediaMetadata(file_format=file_format),
+            is_supported=True,
+        )
+
+    mvhd = moov_data[mvhd_start + 8:]
+    if len(mvhd) < 20:
+        return MediaExtractionResult(
+            metadata=MediaMetadata(file_format=file_format),
+            is_supported=True,
+        )
+
+    version = mvhd[0]
+
+    if version == 0:
+        if len(mvhd) < 20:
+            return MediaExtractionResult(
+                metadata=MediaMetadata(file_format=file_format),
+                is_supported=True,
+            )
+        timescale = struct.unpack_from(">I", mvhd, 12)[0]
+        duration = struct.unpack_from(">I", mvhd, 16)[0]
+    else:
+        if len(mvhd) < 28:
+            return MediaExtractionResult(
+                metadata=MediaMetadata(file_format=file_format),
+                is_supported=True,
+            )
+        timescale = struct.unpack_from(">I", mvhd, 20)[0]
+        duration = struct.unpack_from(">Q", mvhd, 24)[0]
+
+    duration_sec = duration / timescale if timescale > 0 else None
+
+    return MediaExtractionResult(
+        metadata=MediaMetadata(
+            duration=duration_sec,
+            file_format=file_format,
+            has_video=file_format in ("mp4", "m4v", "mov"),
+            has_audio=True,
+        ),
+        is_supported=True,
+    )
+
+
+def _find_mp4_atom(data: bytes, target: bytes) -> int | None:
+    """Find the position of an MP4 atom in binary data."""
+    i = 0
+    while i < len(data) - 8:
+        atom_size = struct.unpack_from(">I", data, i)[0]
+        atom_type = data[i + 4 : i + 8]
+        if atom_type == target:
+            return i
+        if atom_size == 0:
+            break
+        i += atom_size
+    return None
+
+
+def _parse_mkv_header(path: Path, file_format: str) -> MediaExtractionResult:
+    """Extract duration from MKV file by parsing EBML header."""
+    try:
+        with open(path, "rb") as f:
+            data = f.read(8192)
+    except OSError:
+        return MediaExtractionResult(
+            metadata=None,
+            error=f"Cannot read file: {path}",
+            is_supported=False,
+        )
+
+    duration = _find_mkv_duration(data)
+
+    return MediaExtractionResult(
+        metadata=MediaMetadata(
+            duration=duration,
+            file_format=file_format,
+            has_video=True,
+            has_audio=True,
+        ),
+        is_supported=True,
+    )
+
+
+def _find_mkv_duration(data: bytes) -> float | None:
+    """Search for Duration element in MKV Segment Info."""
+    # EBML element IDs
+    SEGMENT_ID = 0x18538067
+    SEEKHEAD_ID = 0x114D9B74
+    INFO_ID = 0x1549A966
+    DURATION_ID = 0x4489
+    # Segment Info starts after Segment element
+    # SeekHead comes before Info, skip it
+    i = 0
+    while i < len(data) - 4:
+        # Look for Segment element
+        if i + 4 <= len(data):
+            possible_id = struct.unpack(">I", data[i : i + 4])[0]
+            if possible_id == SEGMENT_ID:
+                seg_size, size_len = _read_ebml_size(data, i + 4)
+                if seg_size is None:
+                    return None
+                seg_end = i + 4 + size_len + seg_size
+                i += 4 + size_len
+                # Search inside Segment for Info
+                return _find_mkv_info_duration(data[i:seg_end])
+        i += 1
+    return None
+
+
+def _read_ebml_size(data: bytes, offset: int) -> tuple[int | None, int]:
+    """Read an EBML variable-length integer, return (value, bytes_consumed)."""
+    if offset >= len(data):
+        return None, 0
+    first = data[offset]
+    # Find the position of the first 1 bit (the marker)
+    mask = 0x80
+    for i in range(8):
+        if first & mask:
+            size = first & (mask - 1)
+            for j in range(1, i + 1):
+                if offset + j >= len(data):
+                    return None, 0
+                size = (size << 8) | data[offset + j]
+            return size, i + 1
+        mask >>= 1
+    return None, 0
+
+
+def _find_mkv_info_duration(data: bytes) -> float | None:
+    """Find Duration element within MKV Segment Info."""
+    INFO_ID = 0x1549A966
+    DURATION_ID = 0x4489
+
+    i = 0
+    while i < len(data) - 4:
+        # Look for Info element
+        if i + 4 <= len(data):
+            possible_id = struct.unpack(">I", data[i : i + 4])[0]
+            if possible_id == INFO_ID:
+                info_size, size_len = _read_ebml_size(data, i + 4)
+                if info_size is None:
+                    return None
+                i += 4 + size_len
+                info_end = i + info_size
+                # Search inside Info for Duration
+                while i < info_end - 2:
+                    if i + 2 <= len(data):
+                        dur_id = struct.unpack(">H", data[i : i + 2])[0]
+                        if dur_id == DURATION_ID:
+                            dur_size, size_len = _read_ebml_size(data, i + 2)
+                            if dur_size is None:
+                                return None
+                            if dur_size <= 8:
+                                val_data = data[i + 2 + size_len : i + 2 + size_len + dur_size]
+                                if len(val_data) >= 8:
+                                    raw = struct.unpack(">d", val_data[:8])[0]
+                                    # MKV Duration is in milliseconds, convert to seconds
+                                    return raw / 1000.0
+                            return None
+                    i += 1
+                return None
+        i += 1
+    return None
