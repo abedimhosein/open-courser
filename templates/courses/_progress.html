@@ -1,3 +1,4 @@
+{% load course_extras %}
 {% if progress %}
 <div id="course-progress" class="card mb-4">
     <div class="card-body">
@@ -13,9 +14,11 @@
                 {{ progress.completed_files }}/{{ progress.total_files }} files
             </div>
         </div>
-        <small class="text-muted mt-1 d-block">
-            {{ progress.completed_duration|floatformat:0 }}s / {{ progress.total_duration|floatformat:0 }}s watched
-        </small>
+        <div class="d-flex flex-wrap gap-3 mt-2 small text-muted">
+            <span>Total: {{ progress.total_duration|duration }}</span>
+            <span>Watched: {{ progress.completed_duration|duration }}</span>
+            <span>Remaining: {{ progress.remaining_duration|duration }}</span>
+        </div>
     </div>
 </div>
 {% endif %}

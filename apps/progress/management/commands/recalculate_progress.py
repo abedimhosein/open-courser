@@ -25,7 +25,7 @@ class Command(BaseCommand):
 
         progress = get_course_progress(course)
 
-        self.stdout.write(f"Progress for course: {course.name}")
+        self.stdout.write(f"Progress for course: {course.title}")
         self.stdout.write(f"  Overall: {progress['overall_percentage']:.1f}%")
         self.stdout.write(f"  Files: {progress['completed_files']}/{progress['total_files']}")
         self.stdout.write(f"  Duration: {progress['completed_duration']:.0f}s / {progress['total_duration']:.0f}s")

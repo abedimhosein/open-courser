@@ -1,27 +1,22 @@
 """
-Management command to scan a workspace's course root.
+Management command to scan all courses in a workspace.
 
 Usage:
     python manage.py scan_workspace <workspace_id>
-    python manage.py scan_workspace <workspace_id> --full
 """
 
 from django.core.management.base import BaseCommand, CommandError
 
-from apps.courses.services.scanner import scan_workspace
+from apps.courses.models import Course
+from apps.courses.services.scanner import scan_course
 from apps.workspaces.models import Workspace
 
 
 class Command(BaseCommand):
-    help = "Scan a workspace's course root for files"
+    help = "Scan all courses in a workspace"
 
     def add_arguments(self, parser):
         parser.add_argument("workspace_id", type=int, help="Workspace ID to scan")
-        parser.add_argument(
-            "--full",
-            action="store_true",
-            help="Perform a full scan instead of incremental",
-        )
 
     def handle(self, *args, **options):
         try:
@@ -29,16 +24,17 @@ class Command(BaseCommand):
         except Workspace.DoesNotExist:
             raise CommandError(f"Workspace with id {options['workspace_id']} not found")
 
-        self.stdout.write(f"Scanning workspace: {workspace.name}")
-        self.stdout.write(f"Course root: {workspace.course_root}")
+        courses = Course.objects.filter(workspace=workspace)
+        total_added = 0
+        total_deleted = 0
 
-        result = scan_workspace(workspace, incremental=not options["full"])
+        self.stdout.write(f"Scanning workspace: {workspace.name} ({courses.count()} courses)")
 
-        self.stdout.write(self.style.SUCCESS(f"Scan complete:"))
-        self.stdout.write(f"  Files found: {len(result.files)}")
-        self.stdout.write(f"  Directories: {len(result.directories)}")
+        for course in courses:
+            self.stdout.write(f"  Scanning course: {course.title}")
+            result = scan_course(course)
+            total_added += result.added
+            total_deleted += result.deleted
+            self.stdout.write(f"    Nodes: {result.total_nodes}, Added: {result.added}, Deleted: {result.deleted}")
 
-        if result.change_set:
-            self.stdout.write(f"  Added: {len(result.change_set.added)}")
-            self.stdout.write(f"  Modified: {len(result.change_set.modified)}")
-            self.stdout.write(f"  Deleted: {len(result.change_set.deleted)}")
+        self.stdout.write(self.style.SUCCESS(f"Scan complete: {total_added} added, {total_deleted} deleted"))

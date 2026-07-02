@@ -1,11 +1,11 @@
 from django.db import models
 
-from apps.courses.models import CourseFile
+from apps.courses.models import CourseNode
 
 
 class WatchHistory(models.Model):
-    course_file = models.ForeignKey(
-        CourseFile,
+    course_node = models.ForeignKey(
+        CourseNode,
         on_delete=models.CASCADE,
         related_name="watch_history",
     )
@@ -20,4 +20,4 @@ class WatchHistory(models.Model):
         verbose_name_plural = "watch histories"
 
     def __str__(self) -> str:
-        return f"{self.course_file.name} @ {self.position:.1f}s"
+        return f"{self.course_node.name} @ {self.position:.1f}s"

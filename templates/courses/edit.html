@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Edit {{ course.name }} - OpenCourser{% endblock %}
+{% block title %}Edit {{ course.title }} - OpenCourser{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb flex-nowrap text-truncate">
         <li class="breadcrumb-item"><a href="{% url 'workspace_list' %}">Workspaces</a></li>
         <li class="breadcrumb-item"><a href="{% url 'workspace_detail' course.workspace.pk %}">{{ course.workspace.name }}</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'course_detail' course.pk %}">{{ course.name }}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'course_detail' course.pk %}">{{ course.title }}</a></li>
         <li class="breadcrumb-item active">Edit</li>
     </ol>
 </nav>
@@ -20,12 +20,22 @@
             {% csrf_token %}
 
             <div class="mb-3">
-                <label for="{{ form.name.id_for_label }}" class="form-label">Name</label>
-                <input type="text" class="form-control {% if form.name.errors %}is-invalid{% endif %}"
-                       id="{{ form.name.id_for_label }}" name="name"
-                       value="{{ form.name.value|default:'' }}" required>
-                {% if form.name.errors %}
-                <div class="invalid-feedback">{{ form.name.errors.0 }}</div>
+                <label for="{{ form.title.id_for_label }}" class="form-label">Title</label>
+                <input type="text" class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                       id="{{ form.title.id_for_label }}" name="title"
+                       value="{{ form.title.value|default:'' }}" required>
+                {% if form.title.errors %}
+                <div class="invalid-feedback">{{ form.title.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                <textarea class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                          id="{{ form.description.id_for_label }}" name="description"
+                          rows="3">{{ form.description.value|default:'' }}</textarea>
+                {% if form.description.errors %}
+                <div class="invalid-feedback">{{ form.description.errors.0 }}</div>
                 {% endif %}
             </div>
 

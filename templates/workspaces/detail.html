@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load course_extras %}
 
 {% block title %}{{ workspace.name }} - OpenCourser{% endblock %}
 
@@ -17,18 +18,21 @@
         {% endif %}
         <div>
             <h1 class="mb-1 text-break">{{ workspace.name }}</h1>
-            <code class="text-muted small text-break">{{ workspace.course_root }}</code>
+            {% if workspace.description %}
+            <p class="text-muted small mb-0">{{ workspace.description }}</p>
+            {% endif %}
         </div>
     </div>
     <div class="flex-shrink-0">
         <a href="{% url 'workspace_edit' workspace.pk %}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-pen me-1"></i>Edit</a>
+        <a href="{% url 'course_create' workspace.pk %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-1"></i>Add Course</a>
         <button class="btn btn-success btn-sm"
                 hx-post="{% url 'workspace_scan' workspace.pk %}"
                 hx-target="main.container-fluid"
                 hx-swap="outerHTML"
                 hx-indicator="#scan-spinner">
             <i class="fa-solid fa-rotate me-1"></i><span id="scan-spinner" class="spinner-border spinner-border-sm htmx-indicator" role="status"></span>
-            Scan Now
+            Scan All
         </button>
         <a href="{% url 'workspace_delete' workspace.pk %}" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash-can me-1"></i>Delete</a>
     </div>
@@ -46,11 +50,7 @@
 
 {% if scan_summary %}
 <div class="alert alert-info alert-dismissible fade show" role="alert">
-    Scan complete:
-    <strong>{{ scan_summary.total_files }}</strong> files found.
-    {% if scan_summary.added %}+{{ scan_summary.added }} added. {% endif %}
-    {% if scan_summary.modified %}{{ scan_summary.modified }} modified. {% endif %}
-    {% if scan_summary.deleted %}-{{ scan_summary.deleted }} removed.{% endif %}
+    Scan complete: <strong>{{ scan_summary.total_files }}</strong> files found.
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
 {% endif %}
@@ -65,10 +65,10 @@
                  style="height: 140px; object-fit: cover;">
             {% endif %}
             <div class="card-body">
-                <h5 class="card-title"><span class="text-muted fw-semibold me-1">{{ course_list.start_index|add:forloop.counter0 }}.</span><a href="{% url 'course_detail' item.course.pk %}" class="text-decoration-none">{{ item.course.name }}</a></h5>
-                <p class="card-text text-muted small">
-                    <code>{{ item.course.relative_path }}</code>
-                </p>
+                <h5 class="card-title"><span class="text-muted fw-semibold me-1">{{ course_list.start_index|add:forloop.counter0 }}.</span><a href="{% url 'course_detail' item.course.pk %}" class="text-decoration-none">{{ item.course.title }}</a></h5>
+                {% if item.course.description %}
+                <p class="card-text text-muted small">{{ item.course.description }}</p>
+                {% endif %}
                 {% if item.progress %}
                 <div class="mt-3">
                     <div class="d-flex justify-content-between small mb-1">
@@ -81,6 +81,11 @@
                              aria-valuenow="{{ item.progress.overall_percentage|floatformat:0 }}"
                              aria-valuemin="0" aria-valuemax="100">
                         </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mt-1 small text-muted">
+                        <span>{{ item.progress.total_duration|duration }}</span>
+                        <span>Watched: {{ item.progress.completed_duration|duration }}</span>
+                        <span>Left: {{ item.progress.remaining_duration|duration }}</span>
                     </div>
                 </div>
                 {% else %}
@@ -124,10 +129,9 @@
 {% endif %}
 {% else %}
 <div class="text-center py-5">
-    <p class="text-muted">No courses found.</p>
-    <p class="text-muted small">
-        Click "Scan Now" to index the course directory.
-    </p>
+    <p class="text-muted">No courses yet.</p>
+    <p class="text-muted small">Create a course to get started.</p>
+    <a href="{% url 'course_create' workspace.pk %}" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Add Course</a>
 </div>
 {% endif %}
 {% endblock %}

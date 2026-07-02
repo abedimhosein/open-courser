@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Course - OpenCourser{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <h1 class="mb-4">Delete Course?</h1>
+        <p class="lead">Are you sure you want to delete <strong>{{ course.title }}</strong>?</p>
+        <p class="text-muted">
+            This will remove all indexed course data and progress.
+            Files on disk will not be affected.
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Delete</button>
+            <a href="{% url 'course_detail' course.pk %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

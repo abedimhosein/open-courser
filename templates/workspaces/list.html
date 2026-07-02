@@ -19,13 +19,11 @@
             {% endif %}
             <div class="card-body">
                 <h5 class="card-title"><a href="{% url 'workspace_detail' workspace.pk %}" class="text-decoration-none">{{ workspace.name }}</a></h5>
-                <p class="card-text text-muted small">
-                    <code>{{ workspace.course_root }}</code>
-                </p>
+                {% if workspace.description %}
+                <p class="card-text text-muted small">{{ workspace.description }}</p>
+                {% endif %}
                 <p class="card-text">
-                    <small class="text-muted">
-                        Created {{ workspace.created_at|date:"M j, Y" }}
-                    </small>
+                    <small class="text-muted">Created {{ workspace.created_at|date:"M j, Y" }}</small>
                 </p>
             </div>
             <div class="card-footer d-flex flex-wrap gap-1 justify-content-between">

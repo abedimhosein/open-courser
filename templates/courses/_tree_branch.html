@@ -1,0 +1,93 @@
+{% load course_extras %}
+{% for node in nodes %}
+{% if node.node_type == "directory" %}
+<div x-data="{ expanded: false }">
+    <div class="list-group-item list-group-item-secondary py-2">
+        <div class="d-flex align-items-center gap-2" style="padding-left: {{ depth|add:1 }}rem;">
+            <i class="fa-solid" :class="expanded ? 'fa-chevron-down' : 'fa-chevron-right'"
+               @click="expanded = !expanded" style="cursor: pointer; width: 1rem;"></i>
+            <i class="fa-solid fa-folder text-warning"></i>
+            <span class="fw-semibold small">{{ node.name }}</span>
+        </div>
+    </div>
+    {% if node.children_list %}
+    <div x-show="expanded">
+        {% include "courses/_tree_branch.html" with nodes=node.children_list depth=depth|add:1 %}
+    </div>
+    {% endif %}
+</div>
+{% else %}
+<div class="list-group-item list-group-item-action py-2" id="file-row-{{ node.pk }}">
+    <div class="d-flex flex-wrap align-items-center gap-2" style="padding-left: {{ depth|add:1 }}rem;">
+        {% if node.file_type == "video" %}
+        <i class="fa-solid fa-video text-danger"></i>
+        <span class="badge bg-danger d-none d-sm-inline">Video</span>
+        {% elif node.file_type == "audio" %}
+        <i class="fa-solid fa-headphones text-info"></i>
+        <span class="badge bg-info d-none d-sm-inline">Audio</span>
+        {% elif node.file_type == "subtitle" %}
+        <i class="fa-solid fa-closed-captioning text-secondary"></i>
+        <span class="badge bg-secondary d-none d-sm-inline">Sub</span>
+        {% elif node.file_type == "document" %}
+        <i class="fa-solid fa-file-lines text-success"></i>
+        <span class="badge bg-success d-none d-sm-inline">Doc</span>
+        {% else %}
+        <i class="fa-solid fa-file text-secondary"></i>
+        <span class="badge bg-dark d-none d-sm-inline">{{ node.file_type }}</span>
+        {% endif %}
+        <div class="flex-shrink-1 min-w-0" style="flex-basis: 0; flex-grow: 10000;">
+            <a href="{% url 'file_detail' course.pk node.pk %}" class="text-decoration-none text-break small">
+                {{ node.name }}
+            </a>
+            <div class="d-flex gap-3">
+                {% with meta=node.media_metadata %}
+                {% if meta and meta.duration %}
+                <small class="text-muted">{{ meta.duration|duration }}</small>
+                {% endif %}
+                {% endwith %}
+                {% if node.file_size %}
+                <small class="text-muted">{{ node.file_size|filesizeformat }}</small>
+                {% endif %}
+            </div>
+        </div>
+        <div class="ms-auto text-end flex-shrink-0">
+            {% for fp in file_progresses %}
+            {% if fp.file_id == node.pk %}
+            {% if fp.status == "completed" %}
+            <span class="badge bg-success">Completed</span>
+            <button class="btn btn-sm btn-outline-warning ms-1"
+                    hx-post="{% url 'toggle_complete' course.pk node.pk %}"
+                    hx-target="#course-file-list"
+                    hx-swap="outerHTML"
+                    title="Undo complete">
+                <i class="fa-solid fa-undo"></i>
+            </button>
+            {% elif fp.status == "in_progress" %}
+            <div class="d-inline-block text-end">
+                <div class="progress" style="height: 4px; width: 60px;">
+                    <div class="progress-bar" style="width: {{ fp.watched_percentage|floatformat:0 }}%"></div>
+                </div>
+                <small class="text-muted">{{ fp.watched_percentage|floatformat:0 }}%</small>
+            </div>
+            <button class="btn btn-sm btn-outline-success mt-1 d-block d-sm-inline-block"
+                    hx-post="{% url 'toggle_complete' course.pk node.pk %}"
+                    hx-target="#course-file-list"
+                    hx-swap="outerHTML">
+                <i class="fa-solid fa-check me-1"></i>Mark Complete
+            </button>
+            {% else %}
+            <span class="badge bg-secondary">Not Started</span>
+            <button class="btn btn-sm btn-outline-success ms-1"
+                    hx-post="{% url 'toggle_complete' course.pk node.pk %}"
+                    hx-target="#course-file-list"
+                    hx-swap="outerHTML">
+                <i class="fa-solid fa-check me-1"></i>Mark Complete
+            </button>
+            {% endif %}
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}

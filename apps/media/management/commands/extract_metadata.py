@@ -1,5 +1,5 @@
 """
-Management command to extract media metadata for all files in a course.
+Management command to extract media metadata for all file nodes in a course.
 
 Usage:
     python manage.py extract_metadata <course_id>
@@ -7,12 +7,12 @@ Usage:
 
 from django.core.management.base import BaseCommand, CommandError
 
-from apps.courses.models import Course, CourseFile
+from apps.courses.models import Course, CourseNode
 from apps.media.services.extractor import extract_and_save_metadata
 
 
 class Command(BaseCommand):
-    help = "Extract media metadata for all files in a course"
+    help = "Extract media metadata for all file nodes in a course"
 
     def add_arguments(self, parser):
         parser.add_argument("course_id", type=int, help="Course ID to process")
@@ -23,14 +23,14 @@ class Command(BaseCommand):
         except Course.DoesNotExist:
             raise CommandError(f"Course with id {options['course_id']} not found")
 
-        files = CourseFile.objects.filter(course=course)
-        total = files.count()
+        nodes = CourseNode.objects.filter(course=course, node_type="file", file_type__in=("video", "audio"))
+        total = nodes.count()
         success = 0
 
-        self.stdout.write(f"Extracting metadata for course: {course.name} ({total} files)")
+        self.stdout.write(f"Extracting metadata for course: {course.title} ({total} media files)")
 
-        for cf in files:
-            if extract_and_save_metadata(cf):
+        for node in nodes:
+            if extract_and_save_metadata(node):
                 success += 1
 
         self.stdout.write(self.style.SUCCESS(f"Extraction complete: {success}/{total} succeeded"))

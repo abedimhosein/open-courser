@@ -16,48 +16,16 @@
             <div class="mb-3">
                 <label for="name" class="form-label">Workspace Name</label>
                 <input type="text" class="form-control" id="name" name="name"
-                       placeholder="My Courses" required>
+                       placeholder="e.g. Python" required>
             </div>
             <div class="mb-3">
-                <label for="course_root" class="form-label">Course Root Directory</label>
-                <div class="input-group">
-                    <input type="text" class="form-control" id="course_root" name="course_root"
-                           placeholder="C:\Users\me\Courses" required>
-                    <button type="button" class="btn btn-outline-secondary"
-                            data-bs-toggle="modal" data-bs-target="#directoryBrowserModal">
-                        <i class="fa-solid fa-folder-tree me-1"></i>Browse
-                    </button>
-                </div>
-                <div class="form-text">
-                    Absolute path to the directory containing your course folders.
-                </div>
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description"
+                          rows="2" placeholder="Optional description"></textarea>
             </div>
             <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Create Workspace</button>
             <a href="{% url 'workspace_list' %}" class="btn btn-secondary"><i class="fa-solid fa-xmark me-1"></i>Cancel</a>
         </form>
-    </div>
-</div>
-
-<!-- Directory Browser Modal -->
-<div class="modal fade" id="directoryBrowserModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Select Course Root Directory</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div hx-get="{% url 'browse_directories' %}"
-                     hx-trigger="load"
-                     hx-swap="outerHTML">
-                    <div class="text-center py-3">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 {% endblock %}

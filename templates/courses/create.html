@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Add Course - OpenCourser{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb flex-nowrap text-truncate">
+        <li class="breadcrumb-item"><a href="{% url 'workspace_list' %}">Workspaces</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'workspace_detail' workspace.pk %}">{{ workspace.name }}</a></li>
+        <li class="breadcrumb-item active">Add Course</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h1 class="mb-4">Add Course</h1>
+
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="title" class="form-label">Course Title</label>
+                <input type="text" class="form-control" id="title" name="title"
+                       placeholder="e.g. Django Masterclass" required>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description"
+                          rows="2" placeholder="Optional description"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="cover_image" class="form-label">Cover Image</label>
+                <input type="file" class="form-control" id="cover_image" name="cover_image" accept="image/*">
+            </div>
+            <div class="mb-3">
+                <label for="root_path" class="form-label">Course Root Directory</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="root_path" name="root_path"
+                           placeholder="/path/to/course/folder" required>
+                    <button class="btn btn-outline-secondary"
+                            hx-get="{% url 'browse_directories' %}"
+                            hx-target="#dir-browser-container"
+                            hx-swap="innerHTML">
+                        <i class="fa-solid fa-folder-open me-1"></i>Browse
+                    </button>
+                </div>
+                <div class="form-text">
+                    Absolute path to the course directory on your machine.
+                </div>
+                <div id="dir-browser-container" class="mt-2"></div>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Create Course</button>
+            <a href="{% url 'workspace_detail' workspace.pk %}" class="btn btn-secondary"><i class="fa-solid fa-xmark me-1"></i>Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

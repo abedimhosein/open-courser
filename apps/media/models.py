@@ -1,15 +1,14 @@
 from django.db import models
 
+from apps.courses.models import CourseNode
+
 
 class MediaMetadata(models.Model):
-    """
-    Cached media metadata extracted via ffprobe.
-
-    Belongs to the Backend Django Agent (persistence) but the data
-    is produced by the Media Processing Agent.
-    """
-
-    relative_path = models.CharField(max_length=1024, unique=True)
+    course_node = models.OneToOneField(
+        CourseNode,
+        on_delete=models.CASCADE,
+        related_name="media_metadata",
+    )
     duration = models.FloatField(null=True, blank=True)
     codec = models.CharField(max_length=50, blank=True, default="")
     width = models.IntegerField(null=True, blank=True)
@@ -23,4 +22,4 @@ class MediaMetadata(models.Model):
         verbose_name_plural = "media metadata"
 
     def __str__(self) -> str:
-        return self.relative_path
+        return str(self.course_node)
