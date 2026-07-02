@@ -28,7 +28,7 @@
         <a href="{% url 'course_create' workspace.pk %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-1"></i>Add Course</a>
         <button class="btn btn-success btn-sm"
                 hx-post="{% url 'workspace_scan' workspace.pk %}"
-                hx-target="main.container-fluid"
+                hx-target="main.container"
                 hx-swap="outerHTML"
                 hx-indicator="#scan-spinner">
             <i class="fa-solid fa-rotate me-1"></i><span id="scan-spinner" class="spinner-border spinner-border-sm htmx-indicator" role="status"></span>

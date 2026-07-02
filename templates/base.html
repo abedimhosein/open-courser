@@ -16,30 +16,183 @@
         });
     </script>
     <script src="{% static 'js/alpine.min.js' %}" defer></script>
+    <style>
+        :root {
+            --accent: #6ea8fe;
+            --accent-dim: rgba(110, 168, 254, 0.15);
+            --surface: #1a1d21;
+            --surface-raised: #22262b;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+        }
+        .oc-navbar {
+            background: linear-gradient(135deg, var(--surface) 0%, #14171b 100%);
+            border-bottom: 1px solid var(--border-subtle);
+            backdrop-filter: blur(12px);
+            padding: 0.6rem 0;
+            transition: box-shadow 0.3s ease;
+        }
+        .oc-navbar.scrolled {
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
+        .oc-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.15rem;
+            letter-spacing: -0.02em;
+            color: #fff;
+            transition: opacity 0.2s;
+        }
+        .oc-brand:hover { opacity: 0.85; color: #fff; }
+        .oc-brand img {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(110, 168, 254, 0.25);
+        }
+        .oc-nav-link {
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 500;
+            font-size: 0.875rem;
+            padding: 0.4rem 0.85rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .oc-nav-link:hover {
+            color: #fff;
+            background: var(--accent-dim);
+        }
+        .oc-footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border-subtle);
+            margin-top: 4rem;
+        }
+        .oc-footer-top {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0.4;
+        }
+        .oc-footer-brand {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #fff;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .oc-footer-brand img {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+        }
+        .oc-footer-link {
+            color: rgba(255, 255, 255, 0.45);
+            text-decoration: none;
+            font-size: 0.825rem;
+            transition: color 0.2s;
+        }
+        .oc-footer-link:hover { color: var(--accent); }
+        .oc-social-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        .oc-social-icon:hover {
+            color: var(--accent);
+            background: var(--accent-dim);
+            border-color: rgba(110, 168, 254, 0.3);
+            transform: translateY(-1px);
+        }
+        .oc-divider {
+            height: 1px;
+            background: var(--border-subtle);
+        }
+    </style>
     {% block extra_head %}{% endblock %}
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary mb-4">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'workspace_list' %}">
-                <img src="{% static 'logo.svg' %}" alt="" width="28" height="28" class="d-inline-block align-text-top me-2">
-                OpenCourser
-            </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{% url 'workspace_list' %}">Workspaces</a>
+<body x-data="{ scrolled: false }" x-init="window.addEventListener('scroll', () => { scrolled = window.scrollY > 10 })" x-bind:class="scrolled && 'scrolled'">
+    <nav class="oc-navbar fixed-top" x-bind:class="scrolled && 'scrolled'">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between">
+                <a class="oc-brand" href="{% url 'workspace_list' %}">
+                    <img src="{% static 'logo.svg' %}" alt="OpenCourser">
+                    <span>OpenCourser</span>
+                </a>
+                <div class="d-flex align-items-center gap-1">
+                    <a class="oc-nav-link" href="{% url 'workspace_list' %}">
+                        <i class="fa-solid fa-grid-2"></i> Workspaces
+                    </a>
+                    <a class="oc-nav-link" href="https://github.com/abedimhosein/open-courser" target="_blank" rel="noopener">
+                        <i class="fa-brands fa-github"></i>
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
 
-    <main class="container-fluid">
+    <main class="container" style="padding-top: 4.5rem;">
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="border-top border-secondary mt-5 py-3 text-center text-muted small">
-        <div class="container-fluid">
-            OpenCourser — offline course progress tracker
-            <span class="d-none d-sm-inline">&middot;</span>
-            <span class="d-block d-sm-inline">Developed by <a href="https://www.linkedin.com/in/abedimhosein/" target="_blank" class="text-reset text-decoration-none link-light">Mohammad .H Abedi</a></span>
+    <footer class="oc-footer">
+        <div class="oc-footer-top"></div>
+        <div class="container py-5">
+            <div class="row g-4 align-items-start">
+                <div class="col-lg-4 col-md-6">
+                    <a class="oc-footer-brand mb-3" href="{% url 'workspace_list' %}">
+                        <img src="{% static 'logo.svg' %}" alt="">
+                        OpenCourser
+                    </a>
+                    <p class="text-white-50 mt-2" style="font-size: 0.825rem; max-width: 280px;">
+                        Offline course progress tracker. Organize, scan, and track your learning journey — all locally.
+                    </p>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <h6 class="text-uppercase text-white-50 mb-3" style="font-size: 0.7rem; letter-spacing: 0.1em;">Product</h6>
+                    <ul class="list-unstyled d-flex flex-column gap-2">
+                        <li><a class="oc-footer-link" href="{% url 'workspace_list' %}">Workspaces</a></li>
+                        <li><a class="oc-footer-link" href="{% url 'workspace_create' %}">New Workspace</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <h6 class="text-uppercase text-white-50 mb-3" style="font-size: 0.7rem; letter-spacing: 0.1em;">Resources</h6>
+                    <ul class="list-unstyled d-flex flex-column gap-2">
+                        <li><a class="oc-footer-link" href="https://github.com/abedimhosein/open-courser" target="_blank" rel="noopener">GitHub</a></li>
+                        <li><a class="oc-footer-link" href="https://github.com/abedimhosein/open-courser/issues" target="_blank" rel="noopener">Report Issue</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <h6 class="text-uppercase text-white-50 mb-3" style="font-size: 0.7rem; letter-spacing: 0.1em;">Connect</h6>
+                    <div class="d-flex gap-2">
+                        <a class="oc-social-icon" href="https://github.com/abedimhosein/open-courser" target="_blank" rel="noopener" title="GitHub">
+                            <i class="fa-brands fa-github"></i>
+                        </a>
+                        <a class="oc-social-icon" href="https://www.linkedin.com/in/abedimhosein/" target="_blank" rel="noopener" title="LinkedIn">
+                            <i class="fa-brands fa-linkedin-in"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="oc-divider my-4"></div>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <small class="text-white-50">&copy; 2026 OpenCourser. Built with <i class="fa-solid fa-heart" style="color: #ef4444; font-size: 0.65rem;"></i> by <a href="https://www.linkedin.com/in/abedimhosein/" target="_blank" class="text-decoration-none" style="color: var(--accent);">Mohammad H. Abedi</a></small>
+                <small class="text-white-50"><i class="fa-solid fa-circle text-success" style="font-size: 0.4rem; vertical-align: middle;"></i> All data stored locally</small>
+            </div>
         </div>
     </footer>
 
