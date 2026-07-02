@@ -97,6 +97,12 @@ def course_edit(request: WSGIRequest, pk: int) -> HttpResponse:
     if request.method == "POST":
         form = CourseEditForm(request.POST, request.FILES, instance=course)
         if form.is_valid():
+            if request.POST.get("remove_cover_image"):
+                if course.cover_image:
+                    course.cover_image.delete(save=False)
+                course.cover_image = None
+                course.save(update_fields=["cover_image"])
+                return redirect("course_detail", pk=course.pk)
             form.save()
             return redirect("course_detail", pk=course.pk)
     else:

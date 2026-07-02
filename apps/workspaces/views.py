@@ -105,6 +105,12 @@ def workspace_edit(request: HttpRequest, pk: int) -> HttpResponse:
     if request.method == "POST":
         form = WorkspaceEditForm(request.POST, request.FILES, instance=workspace)
         if form.is_valid():
+            if request.POST.get("remove_cover_image"):
+                if workspace.cover_image:
+                    workspace.cover_image.delete(save=False)
+                workspace.cover_image = None
+                workspace.save(update_fields=["cover_image"])
+                return redirect("workspace_detail", pk=workspace.pk)
             form.save()
             return redirect("workspace_detail", pk=workspace.pk)
     else:
