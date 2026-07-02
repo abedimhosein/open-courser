@@ -22,13 +22,14 @@
     </div>
     <div class="flex-shrink-0">
         <a href="{% url 'workspace_edit' workspace.pk %}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-pen me-1"></i>Edit</a>
-        <form method="post" action="{% url 'workspace_scan' workspace.pk %}" class="d-inline">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-success btn-sm">
-                <i class="fa-solid fa-rotate me-1"></i><span class="spinner-border spinner-border-sm htmx-indicator" role="status"></span>
-                Scan Now
-            </button>
-        </form>
+        <button class="btn btn-success btn-sm"
+                hx-post="{% url 'workspace_scan' workspace.pk %}"
+                hx-target="main.container-fluid"
+                hx-swap="outerHTML"
+                hx-indicator="#scan-spinner">
+            <i class="fa-solid fa-rotate me-1"></i><span id="scan-spinner" class="spinner-border spinner-border-sm htmx-indicator" role="status"></span>
+            Scan Now
+        </button>
         <a href="{% url 'workspace_delete' workspace.pk %}" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash-can me-1"></i>Delete</a>
     </div>
 </div>

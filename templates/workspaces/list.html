@@ -38,12 +38,14 @@
                     </a>
                 </div>
                 <div class="d-flex gap-1">
-                    <form method="post" action="{% url 'workspace_scan' workspace.pk %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-outline-success">
-                            <i class="fa-solid fa-rotate me-1"></i>Scan
-                        </button>
-                    </form>
+                    <button class="btn btn-sm btn-outline-success"
+                            hx-post="{% url 'workspace_scan' workspace.pk %}"
+                            hx-target="body"
+                            hx-swap="outerHTML"
+                            hx-indicator="#scan-spinner-{{ workspace.pk }}">
+                        <i class="fa-solid fa-rotate me-1"></i><span id="scan-spinner-{{ workspace.pk }}" class="spinner-border spinner-border-sm htmx-indicator" role="status"></span>
+                        Scan
+                    </button>
                     <a href="{% url 'workspace_delete' workspace.pk %}" class="btn btn-sm btn-outline-danger">
                         <i class="fa-solid fa-trash-can me-1"></i>Delete
                     </a>
