@@ -5,7 +5,18 @@
         </small>
     </div>
 
-    <div class="list-group mb-2" style="max-height: 300px; overflow-y: auto;">
+    <div class="mb-2">
+        <input type="text" class="form-control form-control-sm"
+               id="dir-filter-input" placeholder="Filter directories…"
+               name="q"
+               value="{{ filter_query|default:'' }}"
+               hx-get="{% url 'browse_directories' %}?path={{ current_path|urlencode }}"
+               hx-trigger="input changed delay:200ms"
+               hx-target="#dir-list"
+               hx-swap="innerHTML">
+    </div>
+
+    <div class="list-group mb-2" style="max-height: 300px; overflow-y: auto;" id="dir-list">
         {% if parent_path %}
         <button class="list-group-item list-group-item-action list-group-item-secondary"
                 hx-get="{% url 'browse_directories' %}?path={{ parent_path|urlencode }}"
@@ -24,21 +35,15 @@
                 {{ dir.name }}/
             </button>
             <button class="btn btn-sm btn-outline-primary ms-2"
-                    onclick="selectDirectory('{{ dir.path|escapejs }}')">
+                    onclick="selectDir(this.getAttribute('data-select-dir'))"
+                    data-select-dir="{{ dir.path|escapejs }}">
                 Select
             </button>
         </div>
         {% empty %}
-        <div class="list-group-item text-muted text-center">
+        <div class="list-group-item text-muted text-center" id="dir-empty-state">
             No subdirectories found
         </div>
         {% endfor %}
     </div>
 </div>
-
-<script>
-    function selectDirectory(path) {
-        document.getElementById('root_path').value = path;
-        document.getElementById('dir-browser-container').innerHTML = '';
-    }
-</script>

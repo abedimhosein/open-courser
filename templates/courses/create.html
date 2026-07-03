@@ -58,3 +58,12 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function selectDir(path) {
+        document.getElementById('root_path').value = path;
+        document.getElementById('dir-browser-container').innerHTML = '';
+    }
+</script>
+{% endblock %}

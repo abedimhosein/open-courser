@@ -154,6 +154,7 @@ def browse_directories(request: HttpRequest) -> HttpResponse:
     Used for the course root directory picker.
     """
     current_path_str = request.GET.get("path", "").strip()
+    filter_query = request.GET.get("q", "").strip().lower()
 
     if not current_path_str:
         if Path("/").exists():
@@ -185,12 +186,21 @@ def browse_directories(request: HttpRequest) -> HttpResponse:
         except (OSError, PermissionError):
             continue
 
+    if filter_query:
+        directories = [d for d in directories if filter_query in d["name"].lower()]
+
+    if filter_query:
+        template = "workspaces/_directory_list.html"
+    else:
+        template = "workspaces/_directory_browser.html"
+
     return render(
         request,
-        "workspaces/_directory_browser.html",
+        template,
         {
             "current_path": str(current_path),
             "parent_path": parent_path,
             "directories": directories,
+            "filter_query": filter_query,
         },
     )
