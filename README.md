@@ -23,8 +23,6 @@ OpenCourser is a self-hosted Django web application that helps you organize, bro
 
 | Category | Feature | Description |
 |----------|---------|-------------|
-| Category | Feature | Description |
-|----------|---------|-------------|
 | **Workspaces** | CRUD management | Create, edit, delete workspaces with optional cover images |
 | | Filesystem scanning | Incremental and full scans detect new, modified, deleted files |
 | | Course count | Shows number of courses per workspace |
