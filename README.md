@@ -29,6 +29,9 @@ OpenCourser is a self-hosted Django web application that helps you organize, bro
 | **Courses** | Browsing | Card-based layout with progress bars, paginated (15/page) |
 | | Editing | Rename courses, change workspace, upload cover images, sort by name or progress |
 | | Search | Global search across all workspaces |
+| **Notes** | Markdown notes | Add notes to any file/video with full Markdown support |
+| | Note search | Search all notes with workspace and course filters |
+| | Inline editing | Edit notes in-place with live preview toggle |
 | **Media** | Player | Browser-native video/audio player with resume and auto-complete |
 | | Metadata | ffprobe extraction with pure-Python fallback for MP4/MKV |
 | **Progress** | Tracking | Per-file watched duration, completion toggle, course-level aggregation |
@@ -51,6 +54,7 @@ OpenCourser is a self-hosted Django web application that helps you organize, bro
 | Frontend | Bootstrap 5 (dark), HTMX, Alpine.js |
 | Icons | Font Awesome 6 |
 | Media | ffmpeg / ffprobe |
+| Notes | Markdown rendering with fenced code, tables, lists |
 | Server | Gunicorn (production) |
 | Container | Docker, Docker Compose |
 
@@ -127,9 +131,11 @@ The application is available at [http://localhost:8000](http://localhost:8000).
 4. **Browse Courses** — cards show progress bars; sort by name or progress; paginated 15/page.
 5. **Search** — use the navbar search to find courses across all workspaces.
 6. **Play a File** — browser-native player with auto-resume and position tracking every 3 seconds.
-7. **Track Progress** — use **Mark Complete / Undo** buttons, or let the player auto-complete when playback ends.
-8. **Activity** — view daily/weekly watch charts with trend lines on the Activity page.
-9. **Edit Titles & Covers** — use the **Edit** button on any workspace or course.
+7. **Add Notes** — click on any video/file, then use the Notes section to add Markdown notes.
+8. **Search Notes** — use the Notes link in the navbar to search all notes with workspace/course filters.
+9. **Track Progress** — use **Mark Complete / Undo** buttons, or let the player auto-complete when playback ends.
+10. **Activity** — view daily/weekly watch charts with trend lines on the Activity page.
+11. **Edit Titles & Covers** — use the **Edit** button on any workspace or course.
 
 ---
 
@@ -142,6 +148,7 @@ apps/
   courses/           Course/file browsing, completion toggling
   media/             Media streaming (byte-range), metadata extraction
   progress/          Watch history recording, progress computation
+  notes/             Markdown notes with search and filtering
 domain/skills/       Pure domain logic (no Django imports)
   storage_mapping.py       Path resolution, traversal prevention
   content_discovery.py     Filesystem scanning, change detection
@@ -166,7 +173,7 @@ Each app follows a **presentation → application → domain** layering:
 ## Testing
 
 ```bash
-# Run all tests (40+)
+# Run all tests (66+)
 python -m pytest --tb=short -q
 
 # Domain skill tests only
@@ -174,6 +181,9 @@ python -m pytest tests/
 
 # Django integration tests
 python manage.py test
+
+# Notes tests only
+python manage.py test apps.notes
 ```
 
 ---
