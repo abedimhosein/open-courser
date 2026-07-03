@@ -74,3 +74,16 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Course root directories (indexed env vars from .env)
+COURSE_ROOTS = []
+_i = 0
+while True:
+    _root = os.environ.get(f"COURSE_ROOT_{_i}")
+    if _root is None:
+        break
+    COURSE_ROOTS.append({
+        "host_path": _root,
+        "container_path": f"/courses/{_i}",
+    })
+    _i += 1

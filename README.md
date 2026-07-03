@@ -23,19 +23,24 @@ OpenCourser is a self-hosted Django web application that helps you organize, bro
 
 | Category | Feature | Description |
 |----------|---------|-------------|
+| Category | Feature | Description |
+|----------|---------|-------------|
 | **Workspaces** | CRUD management | Create, edit, delete workspaces with optional cover images |
 | | Filesystem scanning | Incremental and full scans detect new, modified, deleted files |
+| | Course count | Shows number of courses per workspace |
 | **Courses** | Browsing | Card-based layout with progress bars, paginated (15/page) |
-| | Editing | Rename courses, upload cover images, sort by name or progress |
+| | Editing | Rename courses, change workspace, upload cover images, sort by name or progress |
+| | Search | Global search across all workspaces |
 | **Media** | Player | Browser-native video/audio player with resume and auto-complete |
 | | Metadata | ffprobe extraction with pure-Python fallback for MP4/MKV |
 | **Progress** | Tracking | Per-file watched duration, completion toggle, course-level aggregation |
 | | Auto-tracking | Position recorded every 3s; auto-completes when playback ends |
+| | Activity charts | Bar and line charts showing daily/weekly watch activity with trend lines |
 | **UI/UX** | HTMX-driven | No full-page reloads for scans, completion, or progress updates |
 | | Dark theme | Bootstrap 5 dark mode throughout |
-| | Responsive | Supports down to 360px viewport (Galaxy S8+) |
+| | Responsive | Supports down to 360px viewport (Galaxy S8+) with hamburger menus |
 | | Icons | Font Awesome 6 on every button and interactive element |
-| **Deployment** | Docker | Ready-to-deploy with Docker Compose, host filesystem bind mount |
+| **Deployment** | Docker | Ready-to-deploy with Docker Compose, multiple host directory bind mounts |
 
 ---
 
@@ -89,8 +94,11 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
 ### Docker
 
 ```bash
-# Set your courses directory (defaults to ./courses if omitted)
-echo "COURSE_ROOT=/path/to/your/courses" > .env
+# Define course root directories in .env
+cat <<EOF > .env
+COURSE_ROOT_0=C:\Users\You\Downloads
+COURSE_ROOT_1=D:\Courses
+EOF
 
 # Build and start
 docker compose up -d
@@ -98,7 +106,9 @@ docker compose up -d
 
 The application is available at [http://localhost:8000](http://localhost:8000).
 
-> **Note:** When creating a workspace in Docker, use `/courses` as the root path — this is where your host `COURSE_ROOT` directory is mounted inside the container.
+> **How it works:** Each `COURSE_ROOT_N` env var maps to a read-only volume mount at `/courses/N` inside the container. When you click **Browse** in the workspace/course create form, only the configured roots are shown as starting points — not the entire container filesystem.
+
+> **Adding more roots:** Add a new `COURSE_ROOT_N` line in `.env` and a matching volume mount in `docker-compose.yml`, then restart.
 
 ### Docker Volumes
 
@@ -106,19 +116,22 @@ The application is available at [http://localhost:8000](http://localhost:8000).
 |--------|---------|
 | `./data:/app/data` | SQLite database persistence |
 | `./media:/app/media` | Uploaded cover images |
-| `${COURSE_ROOT}:/courses:ro` | Host course directory (read-only) |
+| `${COURSE_ROOT_0}:/courses/0:ro` | First host course directory (read-only) |
+| `${COURSE_ROOT_1}:/courses/1:ro` | Second host course directory (read-only) |
 
 ---
 
 ## Usage
 
-1. **Create a Workspace** — give it a name and point it to a local directory containing course folders.
+1. **Create a Workspace** — give it a name and optionally point it to a course root directory (Docker shows configured roots; local dev browses the filesystem).
 2. **Upload a Cover Image** *(optional)* — via the Edit page for each workspace or course.
 3. **Scan Now** — discovers courses, media files, and extracts metadata.
 4. **Browse Courses** — cards show progress bars; sort by name or progress; paginated 15/page.
-5. **Play a File** — browser-native player with auto-resume and position tracking every 3 seconds.
-6. **Track Progress** — use **Mark Complete / Undo** buttons, or let the player auto-complete when playback ends.
-7. **Edit Titles & Covers** — use the **Edit** button on any workspace or course.
+5. **Search** — use the navbar search to find courses across all workspaces.
+6. **Play a File** — browser-native player with auto-resume and position tracking every 3 seconds.
+7. **Track Progress** — use **Mark Complete / Undo** buttons, or let the player auto-complete when playback ends.
+8. **Activity** — view daily/weekly watch charts with trend lines on the Activity page.
+9. **Edit Titles & Covers** — use the **Edit** button on any workspace or course.
 
 ---
 

@@ -12,6 +12,8 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from domain.skills.storage_mapping import translate_to_docker_path
+
 SUBTITLE_EXTENSIONS = {".srt", ".vtt", ".ass"}
 
 
@@ -148,7 +150,7 @@ def discover_subtitles(media_path: str | Path, course_root: str | Path) -> list[
     Uses base filename matching within the same directory.
     """
     media = Path(media_path)
-    root = Path(course_root).resolve()
+    root = Path(translate_to_docker_path(str(course_root))).resolve()
 
     media_stem = media.stem
     media_dir = media.parent

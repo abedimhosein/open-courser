@@ -6,7 +6,7 @@ from django.db import transaction
 from apps.courses.models import Course, CourseNode
 from apps.media.services.extractor import extract_and_save_metadata
 from domain.skills.content_discovery import scan_directory
-from domain.skills.storage_mapping import normalize_relative_path
+from domain.skills.storage_mapping import normalize_relative_path, translate_to_docker_path
 
 VIDEO_EXTENSIONS = {".mp4", ".mkv", ".webm", ".mov", ".avi"}
 AUDIO_EXTENSIONS = {".mp3", ".wav", ".flac", ".m4a", ".aac", ".ogg"}
@@ -75,7 +75,7 @@ def scan_course(course: Course) -> ScanResult:
     Recursively scan a course's root_path and build a CourseNode tree
     preserving the filesystem hierarchy.
     """
-    root_path = Path(course.root_path)
+    root_path = Path(translate_to_docker_path(course.root_path))
     if not root_path.exists():
         return ScanResult()
 

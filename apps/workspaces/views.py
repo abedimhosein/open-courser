@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpRequest, HttpResponse
 from django.core.paginator import Paginator
@@ -193,6 +194,28 @@ def browse_directories(request: HttpRequest) -> HttpResponse:
     filter_query = request.GET.get("q", "").strip().lower()
 
     if not current_path_str:
+        configured = getattr(settings, "COURSE_ROOTS", [])
+        if configured:
+            directories = []
+            for root in configured:
+                container_path = root["container_path"]
+                host_name = Path(root["host_path"]).name or root["host_path"]
+                directories.append({"name": host_name, "path": container_path})
+            if filter_query:
+                directories = [d for d in directories if filter_query in d["name"].lower()]
+                template = "workspaces/_directory_list.html"
+            else:
+                template = "workspaces/_directory_browser.html"
+            return render(
+                request,
+                template,
+                {
+                    "current_path": "Course Roots",
+                    "parent_path": "",
+                    "directories": directories,
+                    "filter_query": filter_query,
+                },
+            )
         if Path("/").exists():
             candidates = [Path(d) for d in ("/", str(Path.home())) if Path(d).exists()]
             current_path = candidates[0] if candidates else Path.home()
