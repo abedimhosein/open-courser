@@ -1,12 +1,128 @@
 # OpenCourser
 
-Offline course progress tracker — scan local media courses, browse files, track watch progress, and manage completion.
+<p align="center">
+    <a href="#"><img src="https://img.shields.io/badge/python-3.12-blue?style=flat-square" alt="Python 3.12"></a>
+    <a href="#"><img src="https://img.shields.io/badge/django-5.2-%23092E20?style=flat-square" alt="Django 5.2"></a>
+    <a href="#"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License"></a>
+    <a href="#"><img src="https://img.shields.io/badge/status-stable-%2300B4D8?style=flat-square" alt="Status: Stable"></a>
+</p>
 
-Built with Django 5.2, HTMX, Alpine.js, Bootstrap 5 (dark theme), and Font Awesome 6.
+<p align="center">
+    <strong>Offline course progress tracker</strong> — scan local media courses, browse files, track watch progress, and manage completion. All data stays on your machine.
+</p>
 
 ---
 
-## Architecture
+## Overview
+
+OpenCourser is a self-hosted Django web application that helps you organize, browse, and track progress through local media course directories. Point it at a folder of courses, scan for media files, and get a clean web UI with progress tracking, completion toggling, and a browser-native media player — no cloud, no subscriptions, no data leaving your computer.
+
+---
+
+## Features
+
+| Category | Feature | Description |
+|----------|---------|-------------|
+| **Workspaces** | CRUD management | Create, edit, delete workspaces with optional cover images |
+| | Filesystem scanning | Incremental and full scans detect new, modified, deleted files |
+| **Courses** | Browsing | Card-based layout with progress bars, paginated (15/page) |
+| | Editing | Rename courses, upload cover images, sort by name or progress |
+| **Media** | Player | Browser-native video/audio player with resume and auto-complete |
+| | Metadata | ffprobe extraction with pure-Python fallback for MP4/MKV |
+| **Progress** | Tracking | Per-file watched duration, completion toggle, course-level aggregation |
+| | Auto-tracking | Position recorded every 3s; auto-completes when playback ends |
+| **UI/UX** | HTMX-driven | No full-page reloads for scans, completion, or progress updates |
+| | Dark theme | Bootstrap 5 dark mode throughout |
+| | Responsive | Supports down to 360px viewport (Galaxy S8+) |
+| | Icons | Font Awesome 6 on every button and interactive element |
+| **Deployment** | Docker | Ready-to-deploy with Docker Compose, host filesystem bind mount |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Backend | Django 5.2, Python 3.12 |
+| Database | SQLite |
+| Frontend | Bootstrap 5 (dark), HTMX, Alpine.js |
+| Icons | Font Awesome 6 |
+| Media | ffmpeg / ffprobe |
+| Server | Gunicorn (production) |
+| Container | Docker, Docker Compose |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.12+
+- pip
+- Virtual environment (recommended)
+- ffmpeg (optional, for richer media metadata)
+
+### Local Development
+
+```bash
+# Clone the repository
+git clone https://github.com/abedimhosein/open-courser.git
+cd open-courser
+
+# Create and activate a virtual environment
+python -m venv .venv
+.venv\Scripts\activate          # Windows
+source .venv/bin/activate       # Linux / macOS
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run database migrations
+python manage.py migrate
+
+# Start the development server
+python manage.py runserver
+```
+
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
+
+### Docker
+
+```bash
+# Set your courses directory (defaults to ./courses if omitted)
+echo "COURSE_ROOT=/path/to/your/courses" > .env
+
+# Build and start
+docker compose up -d
+```
+
+The application is available at [http://localhost:8000](http://localhost:8000).
+
+> **Note:** When creating a workspace in Docker, use `/courses` as the root path — this is where your host `COURSE_ROOT` directory is mounted inside the container.
+
+### Docker Volumes
+
+| Volume | Purpose |
+|--------|---------|
+| `./data:/app/data` | SQLite database persistence |
+| `./media:/app/media` | Uploaded cover images |
+| `${COURSE_ROOT}:/courses:ro` | Host course directory (read-only) |
+
+---
+
+## Usage
+
+1. **Create a Workspace** — give it a name and point it to a local directory containing course folders.
+2. **Upload a Cover Image** *(optional)* — via the Edit page for each workspace or course.
+3. **Scan Now** — discovers courses, media files, and extracts metadata.
+4. **Browse Courses** — cards show progress bars; sort by name or progress; paginated 15/page.
+5. **Play a File** — browser-native player with auto-resume and position tracking every 3 seconds.
+6. **Track Progress** — use **Mark Complete / Undo** buttons, or let the player auto-complete when playback ends.
+7. **Edit Titles & Covers** — use the **Edit** button on any workspace or course.
+
+---
+
+## Project Structure
 
 ```
 config/              Django project configuration (settings, urls, wsgi)
@@ -24,103 +140,54 @@ domain/skills/       Pure domain logic (no Django imports)
   integrity_management.py  Consistency checks
   background_processing.py Thread-pool job runner
 templates/           Django templates (HTMX partials, Bootstrap)
-static/              Static assets (logo.svg)
+static/              Static assets (logo.svg, CSS, JS)
 tests/               pytest unit tests for domain skills
 media/               User-uploaded cover images
 ```
 
 Each app follows a **presentation → application → domain** layering:
-- Views handle HTTP (presentation)
-- Services orchestrate operations (application)
-- Domain skills implement pure logic (domain)
+- **Views** handle HTTP (presentation)
+- **Services** orchestrate operations (application)
+- **Domain skills** implement pure logic (domain)
 
 ---
 
-## Features
-
-- **Workspace management** — add/remove/edit workspaces with cover images, sortable by name or creation date
-- **Course management** — rename courses, upload cover images, sort by name or progress
-- **Filesystem scanning** — incremental and full scans detect new, modified, and deleted files
-- **Course browsing** — view courses as cards with progress bars, numbered and paginated (15/page)
-- **File player** — browser-native video/audio player with resume, position tracking, auto-complete on end
-- **Progress tracking** — per-file watched duration, completion toggle, course-level aggregation
-- **Metadata extraction** — ffprobe-based media info with pure-Python fallback (MP4/MKV header parsing)
-- **HTMX-driven UI** — no full page reloads for scan, completion toggle, or progress updates
-- **Cover images** — upload cover art for workspaces and courses
-- **Responsive** — mobile-friendly layout down to 360px viewport (Galaxy S8+)
-- **Pagination** — 15 items per page on workspace list and course list
-- **Professional UI** — Font Awesome 6 icons on all buttons, custom SVG logo
-- **Docker** — ready to deploy with Docker Compose, host filesystem bind mount
-- **Dark theme** — Bootstrap 5 dark mode throughout
-
----
-
-## Quick Start
-
-### Local Development
+## Testing
 
 ```bash
-python -m venv .venv
-.venv\Scripts\activate     # Windows
-pip install -r requirements.txt
-pip install Pillow          # cover image support
-python manage.py migrate
-python manage.py runserver
-```
+# Run all tests (40+)
+python -m pytest --tb=short -q
 
-### Docker
+# Domain skill tests only
+python -m pytest tests/
 
-```bash
-# Set your courses directory (optional, defaults to ./courses)
-echo "COURSE_ROOT=C:\Users\me\Courses" > .env
-
-docker compose up -d
-```
-
-Set `COURSE_ROOT` in `.env` to the absolute path of your courses directory. It is mounted at `/courses` inside the container. When creating a workspace in Docker, use `course_root = "/courses"`.
-
----
-
-## Usage
-
-1. Create a **Workspace** — give it a name and point it to a local directory containing course folders
-2. Upload a **cover image** — optional, via the Edit page for each workspace or course
-3. Click **Scan Now** — discovers courses and media files, extracts metadata
-4. Browse courses — cards show progress bars, sortable by name or progress, paginated 15/page
-5. Play a file — browser-native player with auto-resume, position tracking every 3 seconds
-6. Track progress — use **Mark Complete / Undo** buttons, or let the player auto-complete on end
-7. Edit titles & covers — use the **Edit** button on any workspace or course
-
----
-
-## Tests
-
-```bash
-python -m pytest --tb=short -q          # all tests (40+)
-python -m pytest tests/                 # domain skill tests only
-python manage.py test                   # Django integration tests
+# Django integration tests
+python manage.py test
 ```
 
 ---
 
-## Docker
+## Contributing
 
-The Docker image includes ffprobe for richer metadata extraction. The `.dockerignore` keeps the build context lean by excluding virtualenvs, caches, and IDE files.
+Contributions are welcome! Here's how to get started:
 
-| Volume | Purpose |
-|--------|---------|
-| `./data:/app/data` | SQLite database persistence |
-| `./media:/app/media` | Uploaded cover images |
-| `${COURSE_ROOT}:/courses:ro` | Host course directory (read-only) |
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -am 'Add my feature'`)
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Open a Pull Request
+
+Please ensure tests pass before submitting.
 
 ---
 
-## Developer
+## Author
 
-Developed by [Mohammad .H Abedi](https://www.linkedin.com/in/abedimhosein/)
+**Mohammad H. Abedi**  
+[LinkedIn](https://www.linkedin.com/in/abedimhosein/) · [GitHub](https://github.com/abedimhosein)
 
 ---
 
 ## License
 
-MIT
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
