@@ -13,6 +13,7 @@ Thumbs.db
 .gitignore
 .idea
 .opencode
+.mimocode
 .dockerignore
 db.sqlite3
 staticfiles/

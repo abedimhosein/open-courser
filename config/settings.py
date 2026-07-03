@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     "apps.courses",
     "apps.media",
     "apps.progress",
+    "apps.notes",
 ]
 
 MIDDLEWARE = [

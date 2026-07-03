@@ -1,0 +1,90 @@
+<div class="p-3 rounded mb-3" style="background: var(--surface-raised); border: 1px solid var(--border-subtle);">
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert" style="background: rgba(220, 53, 69, 0.15); border-color: rgba(220, 53, 69, 0.3); color: #ff6b6b;">
+        {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" style="filter: invert(1);"></button>
+    </div>
+    {% endif %}
+
+    <form
+        {% if note %}
+            hx-post="{% url 'note_edit' note.pk %}"
+        {% else %}
+            hx-post="{% url 'note_create' node.course.pk node.pk %}"
+        {% endif %}
+        hx-target="{% if note %}#note-{{ note.pk }}{% else %}#notes-list{% endif %}"
+        hx-swap="{% if note %}outerHTML{% else %}afterbegin{% endif %}"
+    >
+        {% csrf_token %}
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label for="note-content-{{ note.pk|default:'new' }}" class="mb-0" style="color: rgba(255,255,255,0.8); font-size: 0.875rem; font-weight: 500;">
+                    {% if note %}Edit Note{% else %}New Note{% endif %}
+                </label>
+                <div class="btn-group btn-group-sm" role="group">
+                    <input type="radio" class="btn-check" name="view-mode-{{ note.pk|default:'new' }}" id="edit-mode-{{ note.pk|default:'new' }}" value="edit" checked>
+                    <label class="btn btn-outline-secondary btn-sm" for="edit-mode-{{ note.pk|default:'new' }}" style="font-size: 0.75rem;">Edit</label>
+                    <input type="radio" class="btn-check" name="view-mode-{{ note.pk|default:'new' }}" id="preview-mode-{{ note.pk|default:'new' }}" value="preview">
+                    <label class="btn btn-outline-secondary btn-sm" for="preview-mode-{{ note.pk|default:'new' }}" style="font-size: 0.75rem;">Preview</label>
+                </div>
+            </div>
+            <textarea
+                class="form-control"
+                id="note-content-{{ note.pk|default:'new' }}"
+                name="content"
+                rows="4"
+                placeholder="Write your note in Markdown..."
+                required
+                style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); color: #fff; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.875rem;"
+            >{{ note.content|default:"" }}</textarea>
+            <div id="note-preview-{{ note.pk|default:'new' }}" class="rounded mt-2 p-3 note-markdown" style="display: none; min-height: 100px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); color: rgba(255,255,255,0.8);"></div>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-sm" style="background: var(--accent); color: #fff; border: none;">
+                <i class="fa-solid fa-save me-1"></i>{% if note %}Save{% else %}Add{% endif %}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                onclick="
+                    var formContainer = document.getElementById('note-form-container');
+                    var addBtn = document.getElementById('add-note-btn');
+                    if (formContainer) formContainer.style.display = 'none';
+                    if (addBtn) addBtn.style.display = '';
+                ">
+                Cancel
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+(function() {
+    var editMode = document.getElementById('edit-mode-{{ note.pk|default:'new' }}');
+    var previewMode = document.getElementById('preview-mode-{{ note.pk|default:'new' }}');
+    var textarea = document.getElementById('note-content-{{ note.pk|default:'new' }}');
+    var preview = document.getElementById('note-preview-{{ note.pk|default:'new' }}');
+
+    if (previewMode) {
+        previewMode.addEventListener('change', function() {
+            if (this.checked) {
+                preview.style.display = 'block';
+                textarea.style.display = 'none';
+                var text = textarea.value;
+                preview.innerHTML = text
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/\n/g, '<br>');
+            }
+        });
+    }
+
+    if (editMode) {
+        editMode.addEventListener('change', function() {
+            if (this.checked) {
+                preview.style.display = 'none';
+                textarea.style.display = 'block';
+            }
+        });
+    }
+})();
+</script>

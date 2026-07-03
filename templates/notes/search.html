@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load note_extras %}
+
+{% block title %}Search Notes{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">
+        <i class="fas fa-search me-2"></i>Search Notes
+    </h2>
+
+    <form method="get" class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="q" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="q" name="q"
+                           value="{{ query }}" placeholder="Search note content...">
+                </div>
+                <div class="col-md-3">
+                    <label for="workspace" class="form-label">Workspace</label>
+                    <select class="form-select" id="workspace" name="workspace"
+                            onchange="this.form.submit()">
+                        <option value="">All Workspaces</option>
+                        {% for ws in workspaces %}
+                        <option value="{{ ws.pk }}" {% if selected_workspace == ws.pk|stringformat:"d" %}selected{% endif %}>
+                            {{ ws.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="course" class="form-label">Course</label>
+                    <select class="form-select" id="course" name="course">
+                        <option value="">All Courses</option>
+                        {% for c in courses %}
+                        <option value="{{ c.pk }}" {% if selected_course == c.pk|stringformat:"d" %}selected{% endif %}>
+                            {{ c.title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i>Search
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {% if notes %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Note</th>
+                    <th>File</th>
+                    <th>Course</th>
+                    <th>Workspace</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in notes %}
+                <tr>
+                    <td>
+                        <div class="note-markdown" style="max-height: 100px; overflow: hidden;">
+                            {{ item.note.content|markdown }}
+                        </div>
+                    </td>
+                    <td>
+                        <a href="{% url 'file_detail' item.note.course_node.course.pk item.note.course_node.pk %}">
+                            {{ item.note.course_node.name }}
+                        </a>
+                    </td>
+                    <td>{{ item.note.course_node.course.title }}</td>
+                    <td>{{ item.note.course_node.course.workspace.name }}</td>
+                    <td>{{ item.note.created_at|date:"M d, Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% elif query or selected_workspace or selected_course %}
+    <div class="text-center py-5 text-muted">
+        <i class="fas fa-search fa-3x mb-3"></i>
+        <p>No notes found matching your criteria.</p>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="fas fa-sticky-note fa-3x mb-3"></i>
+        <p>Enter a search query or select a filter to find notes.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
