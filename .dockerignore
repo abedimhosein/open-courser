@@ -16,5 +16,6 @@ Thumbs.db
 db.sqlite3
 staticfiles/
 test_courses/
+data/
 media/
 README.md

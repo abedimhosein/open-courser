@@ -263,18 +263,17 @@ def _parse_mp4_header(path: Path, file_format: str) -> MediaExtractionResult:
         read_size = min(file_size, 4 * 1024 * 1024)  # up to 4MB for moov
         with open(path, "rb") as f:
             head = f.read(min(file_size, 65536))
-            # Find mdat end to locate moov (typically after mdat)
-            mdat_end = _find_mdat_end(head, file_size)
-            if mdat_end is not None and mdat_end < file_size:
-                moov_size = min(file_size - mdat_end, read_size)
-                f.seek(mdat_end)
-                data = f.read(moov_size)
-            elif file_size > 65536:
-                # Fallback: read end of file
+            tail = b""
+            # Search head for moov (fast-start MP4s put moov first)
+            data = head
+            moov_start = _find_mp4_atom(data, b"moov")
+            if moov_start is None and file_size > 65536:
+                # Not in head — read tail of file (moov is typically at end)
                 tail_size = min(file_size, read_size)
                 f.seek(file_size - tail_size)
-                data = f.read(tail_size)
-            else:
+                tail = f.read(tail_size)
+                data = tail
+            elif moov_start is None:
                 data = head
     except OSError:
         return MediaExtractionResult(

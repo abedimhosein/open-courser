@@ -16,6 +16,13 @@
         });
     </script>
     <script src="{% static 'js/alpine.min.js' %}" defer></script>
+    <script defer>
+        document.addEventListener('alpine:init', () => {
+            Alpine.store('treeState', {
+                expanded: {}
+            });
+        });
+    </script>
     <style>
         :root {
             --accent: #6ea8fe;

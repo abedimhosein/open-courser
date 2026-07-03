@@ -93,11 +93,13 @@ def calculate_course_progress(file_progresses: list[FileProgress], durations: li
             completed_files += 1
 
     if total_duration > 0:
-        overall_pct = min((completed_duration / total_duration) * 100, 100.0)
-    elif total_files > 0:
-        overall_pct = (completed_files / total_files) * 100
+        duration_pct = min((completed_duration / total_duration) * 100, 100.0)
     else:
-        overall_pct = 0.0
+        duration_pct = 0.0
+
+    file_pct = (completed_files / total_files) * 100 if total_files > 0 else 0.0
+
+    overall_pct = max(duration_pct, file_pct)
 
     return CourseProgress(
         total_duration=total_duration,

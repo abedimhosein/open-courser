@@ -28,7 +28,7 @@
     <div class="flex-shrink-0 d-flex flex-wrap gap-2">
         <button class="btn btn-success btn-sm"
                 hx-post="{% url 'course_scan' course.pk %}"
-                hx-target="main.container-fluid"
+                hx-target="main.container"
                 hx-swap="outerHTML"
                 hx-indicator="#course-scan-spinner">
             <i class="fa-solid fa-rotate me-1"></i><span id="course-scan-spinner" class="spinner-border spinner-border-sm htmx-indicator" role="status"></span>
@@ -49,9 +49,11 @@
     </div>
 </div>
 
+<div id="course-content">
 {% include "courses/_progress.html" %}
 
 {% include "courses/_file_list.html" %}
+</div>
 {% endblock %}
 
 {% block extra_scripts %}

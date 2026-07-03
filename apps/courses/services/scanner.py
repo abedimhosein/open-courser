@@ -83,7 +83,7 @@ def scan_course(course: Course) -> ScanResult:
 
     existing_nodes = {
         n.relative_path: n
-        for n in CourseNode.objects.filter(course=course)
+        for n in CourseNode.objects.filter(course=course).select_related("media_metadata")
     }
     seen_paths: set[str] = set()
     result = ScanResult()
@@ -141,6 +141,8 @@ def scan_course(course: Course) -> ScanResult:
                 for key, val in defaults.items():
                     setattr(node, key, val)
                 node.save()
+            if file_type in ("video", "audio") and node.media_metadata is None:
+                media_nodes.append(node)
         else:
             node = CourseNode.objects.create(course=course, relative_path=rel_path, **defaults)
             existing_nodes[rel_path] = node

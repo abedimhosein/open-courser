@@ -184,12 +184,29 @@ def course_files_partial(request: WSGIRequest, pk: int) -> HttpResponse:
 
 
 def toggle_complete(request: WSGIRequest, course_pk: int, node_pk: int) -> HttpResponse:
-    """Toggle completion status for a course node and reload the page."""
+    """Toggle completion status for a course node and update the file list."""
     course = get_object_or_404(Course, pk=course_pk)
     node = get_object_or_404(CourseNode, pk=node_pk, course=course)
     _toggle_node_completion(node)
-    response = HttpResponse()
-    response["HX-Redirect"] = reverse("course_detail", kwargs={"pk": course.pk})
+
+    nodes = CourseNode.objects.filter(course=course).order_by("sort_order", "name")
+    tree = _build_node_tree(list(nodes))
+    file_nodes = [n for n in nodes if n.node_type == "file"]
+    file_progresses = [get_file_progress(n) for n in file_nodes]
+
+    progress = get_course_progress(course)
+
+    response = render(
+        request,
+        "courses/_course_content.html",
+        {
+            "course": course,
+            "tree": tree,
+            "file_nodes": file_nodes,
+            "file_progresses": file_progresses,
+            "progress": progress,
+        },
+    )
     return response
 
 

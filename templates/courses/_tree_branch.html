@@ -1,7 +1,8 @@
 {% load course_extras %}
 {% for node in nodes %}
 {% if node.node_type == "directory" %}
-<div x-data="{ expanded: false }">
+<div x-data="{ expanded: $store.treeState.expanded[{{ node.pk }}] ?? false }"
+     x-init="$watch('expanded', val => $store.treeState.expanded[{{ node.pk }}] = val)">
     <div class="list-group-item list-group-item-secondary py-2">
         <div class="d-flex align-items-center gap-2" style="padding-left: {{ depth|add:1 }}rem;">
             <i class="fa-solid" :class="expanded ? 'fa-chevron-down' : 'fa-chevron-right'"
@@ -57,7 +58,7 @@
             <span class="badge bg-success">Completed</span>
             <button class="btn btn-sm btn-outline-warning ms-1"
                     hx-post="{% url 'toggle_complete' course.pk node.pk %}"
-                    hx-target="#course-file-list"
+                    hx-target="#course-content"
                     hx-swap="outerHTML"
                     title="Undo complete">
                 <i class="fa-solid fa-undo"></i>
@@ -71,7 +72,7 @@
             </div>
             <button class="btn btn-sm btn-outline-success mt-1 d-block d-sm-inline-block"
                     hx-post="{% url 'toggle_complete' course.pk node.pk %}"
-                    hx-target="#course-file-list"
+                    hx-target="#course-content"
                     hx-swap="outerHTML">
                 <i class="fa-solid fa-check me-1"></i>Mark Complete
             </button>
@@ -79,7 +80,7 @@
             <span class="badge bg-secondary">Not Started</span>
             <button class="btn btn-sm btn-outline-success ms-1"
                     hx-post="{% url 'toggle_complete' course.pk node.pk %}"
-                    hx-target="#course-file-list"
+                    hx-target="#course-content"
                     hx-swap="outerHTML">
                 <i class="fa-solid fa-check me-1"></i>Mark Complete
             </button>
