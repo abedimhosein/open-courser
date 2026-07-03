@@ -80,6 +80,17 @@
                 <div class="form-text">Leave empty to keep current image.</div>
             </div>
 
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="{{ form.locked.id_for_label }}"
+                           name="locked" {% if form.locked.value %}checked{% endif %}>
+                    <label class="form-check-label" for="{{ form.locked.id_for_label }}">
+                        <i class="fa-solid fa-lock me-1"></i>Lock Course
+                    </label>
+                </div>
+                <div class="form-text">When locked, scanning is disabled to prevent accidental changes.</div>
+            </div>
+
             <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i>Save</button>
             <a href="{% url 'course_detail' course.pk %}" class="btn btn-secondary"><i class="fa-solid fa-xmark me-1"></i>Cancel</a>
         </form>

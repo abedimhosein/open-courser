@@ -22,6 +22,7 @@ class Course(models.Model):
     description = models.TextField(blank=True, default="")
     root_path = models.CharField(max_length=1024)
     cover_image = models.ImageField(upload_to=_cover_upload_path, blank=True)
+    locked = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(default=timezone.now, blank=True)
 

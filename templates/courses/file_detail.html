@@ -13,10 +13,21 @@
     </ol>
 </nav>
 
+{% if error %}
+<div class="alert alert-warning d-flex align-items-center" role="alert" style="background: rgba(255, 193, 7, 0.15); border-color: rgba(255, 193, 7, 0.3); color: #ffc107;">
+    <i class="fa-solid fa-triangle-exclamation me-3 fa-lg"></i>
+    <div>
+        <strong>File Not Found</strong><br>
+        {{ error }}
+    </div>
+</div>
+{% endif %}
+
 <div class="row g-3">
     <div class="col-lg-8">
         <div class="card mb-4">
             <div class="card-body p-0">
+                {% if file_path %}
                 {% if file.file_type == "video" %}
                 <video id="media-player" class="w-100" controls
                        data-file-pk="{{ file.pk }}"
@@ -43,6 +54,13 @@
                 {% else %}
                 <div class="text-center py-5">
                     <p class="text-muted">This file type cannot be played.</p>
+                    <a href="{% url 'course_detail' course.pk %}" class="btn btn-primary"><i class="fa-solid fa-arrow-left me-1"></i>Back to Course</a>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fa-solid fa-file-circle-xmark fa-3x mb-3" style="color: rgba(255,255,255,0.2);"></i>
+                    <p class="text-muted">This file is not available on disk.</p>
                     <a href="{% url 'course_detail' course.pk %}" class="btn btn-primary"><i class="fa-solid fa-arrow-left me-1"></i>Back to Course</a>
                 </div>
                 {% endif %}

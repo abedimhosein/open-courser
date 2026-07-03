@@ -48,12 +48,21 @@ def serve_media(request: WSGIRequest, course_pk: int, node_pk: int) -> HttpRespo
     try:
         absolute_path = resolve_absolute(node.course.root_path, node.relative_path)
     except Exception:
-        raise Http404("File not found")
+        raise Http404("File not found - course root may need re-scanning")
 
     path = Path(absolute_path)
 
     if not path.exists():
-        raise Http404("File not found on disk")
+        # Try to find the file by name in the root directory as a fallback
+        root_path = Path(node.course.root_path).resolve()
+        if root_path.exists():
+            for file_path in root_path.rglob(node.name):
+                if file_path.is_file():
+                    path = file_path
+                    break
+
+    if not path.exists():
+        raise Http404("File not found on disk - course may need re-scanning")
 
     content_type, _ = mimetypes.guess_type(str(path))
     if content_type is None:

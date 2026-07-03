@@ -12,40 +12,56 @@
     </ol>
 </nav>
 
-<div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4 gap-2">
-    <div class="d-flex align-items-center gap-3 min-w-0">
+<div class="mb-4">
+    <div class="d-flex align-items-center gap-3 mb-3">
         {% if course.cover_image %}
         <img src="{{ course.cover_image.url }}" alt="" class="rounded flex-shrink-0"
-             style="width: 80px; height: 80px; object-fit: cover;">
+             style="width: 56px; height: 56px; object-fit: cover;">
         {% endif %}
-        <div>
-            <h1 class="text-break mb-1">{{ course.title }}</h1>
+        <div class="flex-grow-1 min-w-0">
+            <h1 class="mb-0" style="font-size: 1.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ course.title }}
+                {% if course.locked %}
+                <i class="fa-solid fa-lock ms-2" style="color: var(--accent); font-size: 0.6em;"></i>
+                {% endif %}
+            </h1>
             {% if course.description %}
-            <p class="text-muted mb-0">{{ course.description }}</p>
+            <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">{{ course.description }}</p>
             {% endif %}
         </div>
     </div>
-    <div class="flex-shrink-0 d-flex flex-wrap gap-2">
-        <button class="btn btn-success btn-sm"
+    <div class="d-flex flex-wrap gap-1">
+        <button class="btn btn-sm {% if course.locked %}btn-outline-secondary{% else %}btn-success{% endif %}"
+                title="{% if course.locked %}Course is locked{% else %}Scan for new files{% endif %}"
+                {% if course.locked %}disabled{% endif %}
                 hx-post="{% url 'course_scan' course.pk %}"
                 hx-target="main.container"
                 hx-swap="outerHTML"
                 hx-indicator="#course-scan-spinner">
-            <i class="fa-solid fa-rotate me-1"></i><span id="course-scan-spinner" class="spinner-border spinner-border-sm htmx-indicator" role="status"></span>
-            Scan
+            <i class="fa-solid fa-rotate me-1"></i>Scan<span id="course-scan-spinner" class="spinner-border spinner-border-sm htmx-indicator ms-1" role="status"></span>
         </button>
         <button class="btn btn-outline-success btn-sm"
+                title="Mark all files as completed"
                 hx-post="{% url 'course_complete_all' course.pk %}"
                 hx-confirm="Mark all files as completed?">
             <i class="fa-solid fa-check-double me-1"></i>Complete All
         </button>
         <button class="btn btn-outline-danger btn-sm"
+                title="Reset progress for all files"
                 hx-post="{% url 'course_reset_all' course.pk %}"
                 hx-confirm="Reset progress for all files?">
             <i class="fa-solid fa-rotate-left me-1"></i>Reset All
         </button>
-        <a href="{% url 'course_edit' course.pk %}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-pen me-1"></i>Edit</a>
-        <a href="{% url 'course_delete' course.pk %}" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash-can me-1"></i>Delete</a>
+        <button class="btn btn-sm {% if course.locked %}btn-warning{% else %}btn-outline-warning{% endif %}"
+                title="{% if course.locked %}Unlock course{% else %}Lock course to prevent scanning{% endif %}"
+                hx-post="{% url 'course_toggle_lock' course.pk %}"
+                hx-target="main.container"
+                hx-swap="outerHTML"
+                hx-confirm="{% if course.locked %}Unlock this course?{% else %}Lock this course? Scanning will be disabled.{% endif %}">
+            <i class="fa-solid fa-{% if course.locked %}lock-open{% else %}lock{% endif %} me-1"></i>{% if course.locked %}Unlock{% else %}Lock{% endif %}
+        </button>
+        <a href="{% url 'course_edit' course.pk %}" class="btn btn-outline-secondary btn-sm" title="Edit course"><i class="fa-solid fa-pen me-1"></i>Edit</a>
+        <a href="{% url 'course_delete' course.pk %}" class="btn btn-outline-danger btn-sm" title="Delete course"><i class="fa-solid fa-trash-can me-1"></i>Delete</a>
     </div>
 </div>
 

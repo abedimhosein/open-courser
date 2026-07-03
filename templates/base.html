@@ -138,15 +138,15 @@
             <div class="d-flex align-items-center justify-content-between">
                 <a class="oc-brand" href="{% url 'workspace_list' %}">
                     <img src="{% static 'logo.svg' %}" alt="OpenCourser">
-                    <span class="d-none d-sm-inline">OpenCourser</span>
+                    <span class="d-none d-md-inline">OpenCourser</span>
                 </a>
-                <div class="d-flex align-items-center gap-1">
-                    <form class="d-none d-sm-flex me-2" action="{% url 'course_search' %}" method="get">
+                <div class="d-flex align-items-center gap-2">
+                    <form class="d-none d-sm-flex" action="{% url 'course_search' %}" method="get">
                         <input type="search" class="form-control form-control-sm" name="q"
-                               placeholder="Search courses…" value="{{ request.GET.q|default:'' }}"
-                               style="width: 200px;">
+                               placeholder="Search…" value="{{ request.GET.q|default:'' }}"
+                               style="width: 150px;">
                     </form>
-                    <div class="d-none d-sm-flex align-items-center gap-1">
+                    <div class="d-none d-lg-flex align-items-center gap-1">
                         <a class="oc-nav-link" href="{% url 'activity' %}">
                             <i class="fa-solid fa-chart-column"></i> Activity
                         </a>
@@ -154,11 +154,22 @@
                             <i class="fa-solid fa-sticky-note"></i> Notes
                         </a>
                         <a class="oc-nav-link" href="{% url 'workspace_list' %}">
-                            <i class="fa-solid fa-grid-2"></i> Workspaces
+                            <i class="fa-solid fa-layer-group"></i> Workspaces
                         </a>
                         <a class="oc-nav-link" href="https://github.com/abedimhosein/open-courser" target="_blank" rel="noopener">
                             <i class="fa-brands fa-github"></i>
                         </a>
+                    </div>
+                    <div class="d-none d-sm-flex d-lg-none dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fa-solid fa-bars"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'activity' %}"><i class="fa-solid fa-chart-column me-2"></i>Activity</a></li>
+                            <li><a class="dropdown-item" href="{% url 'notes_search' %}"><i class="fa-solid fa-sticky-note me-2"></i>Notes</a></li>
+                            <li><a class="dropdown-item" href="{% url 'workspace_list' %}"><i class="fa-solid fa-layer-group me-2"></i>Workspaces</a></li>
+                            <li><a class="dropdown-item" href="https://github.com/abedimhosein/open-courser" target="_blank" rel="noopener"><i class="fa-brands fa-github me-2"></i>GitHub</a></li>
+                        </ul>
                     </div>
                     <div class="d-sm-none dropdown">
                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -168,13 +179,13 @@
                             <li>
                                 <form class="px-3 py-1" action="{% url 'course_search' %}" method="get">
                                     <input type="search" class="form-control form-control-sm" name="q"
-                                           placeholder="Search courses…" value="{{ request.GET.q|default:'' }}">
+                                           placeholder="Search…" value="{{ request.GET.q|default:'' }}">
                                 </form>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'activity' %}"><i class="fa-solid fa-chart-column me-2"></i>Activity</a></li>
                             <li><a class="dropdown-item" href="{% url 'notes_search' %}"><i class="fa-solid fa-sticky-note me-2"></i>Notes</a></li>
-                            <li><a class="dropdown-item" href="{% url 'workspace_list' %}"><i class="fa-solid fa-grid-2 me-2"></i>Workspaces</a></li>
+                            <li><a class="dropdown-item" href="{% url 'workspace_list' %}"><i class="fa-solid fa-layer-group me-2"></i>Workspaces</a></li>
                             <li><a class="dropdown-item" href="https://github.com/abedimhosein/open-courser" target="_blank" rel="noopener"><i class="fa-brands fa-github me-2"></i>GitHub</a></li>
                         </ul>
                     </div>

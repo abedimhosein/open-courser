@@ -14,14 +14,14 @@ from apps.progress.services.tracker import (
     mark_completed,
     reset_file_progress,
 )
-from domain.skills.storage_mapping import resolve_absolute
+from domain.skills.storage_mapping import resolve_absolute, MissingRootError
 from domain.skills.media_understanding import discover_subtitles
 
 
 class CourseEditForm(ModelForm):
     class Meta:
         model = Course
-        fields = ["workspace", "title", "cover_image", "description"]
+        fields = ["workspace", "title", "cover_image", "description", "locked"]
 
 
 def _build_node_tree(nodes):
@@ -140,7 +140,21 @@ def course_delete(request: WSGIRequest, pk: int) -> HttpResponse:
 def course_scan(request: WSGIRequest, pk: int) -> HttpResponse:
     """Scan a single course and reload the page."""
     course = get_object_or_404(Course.objects.select_related("workspace"), pk=pk)
+    if course.locked:
+        response = HttpResponse()
+        response["HX-Refresh"] = "true"
+        return response
     scan_course(course)
+    response = HttpResponse()
+    response["HX-Refresh"] = "true"
+    return response
+
+
+def course_toggle_lock(request: WSGIRequest, pk: int) -> HttpResponse:
+    """Toggle the lock state of a course."""
+    course = get_object_or_404(Course, pk=pk)
+    course.locked = not course.locked
+    course.save(update_fields=["locked"])
     response = HttpResponse()
     response["HX-Refresh"] = "true"
     return response
@@ -266,14 +280,32 @@ def _toggle_node_completion(node: CourseNode) -> None:
 
 def file_detail(request: WSGIRequest, course_pk: int, node_pk: int) -> HttpResponse:
     """View a single course file node."""
+    from pathlib import Path as FilePath
+
     course = get_object_or_404(Course, pk=course_pk)
     node = get_object_or_404(CourseNode, pk=node_pk, course=course)
 
-    absolute_path = resolve_absolute(course.root_path, node.relative_path)
+    error = None
+    absolute_path = None
+
+    try:
+        absolute_path = resolve_absolute(course.root_path, node.relative_path)
+        if not FilePath(absolute_path).exists():
+            # Fallback: search for file by name in root directory
+            root_path = FilePath(course.root_path).resolve()
+            if root_path.exists():
+                for file_path in root_path.rglob(node.name):
+                    if file_path.is_file():
+                        absolute_path = file_path
+                        break
+            if not FilePath(absolute_path).exists():
+                error = "File not found on disk. The course may need to be re-scanned."
+    except MissingRootError:
+        error = "Course root directory not found. The course may need to be re-scanned."
 
     metadata_model = None
     subtitles = []
-    if node.file_type in ("video", "audio"):
+    if absolute_path and FilePath(absolute_path).exists() and node.file_type in ("video", "audio"):
         metadata_model = extract_and_save_metadata(node)
         subtitles = discover_subtitles(absolute_path, course.root_path)
 
@@ -285,9 +317,10 @@ def file_detail(request: WSGIRequest, course_pk: int, node_pk: int) -> HttpRespo
         {
             "course": course,
             "file": node,
-            "file_path": str(absolute_path),
+            "file_path": str(absolute_path) if absolute_path and FilePath(absolute_path).exists() else None,
             "metadata": metadata_model,
             "subtitles": subtitles,
             "progress": progress,
+            "error": error,
         },
     )
