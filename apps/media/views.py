@@ -9,6 +9,29 @@ from apps.courses.models import Course, CourseNode
 from domain.skills.storage_mapping import resolve_absolute
 
 
+def serve_subtitle(request: WSGIRequest, course_pk: int, sub_path: str) -> HttpResponse:
+    """Serve a subtitle file for a course."""
+    course = get_object_or_404(Course, pk=course_pk)
+
+    try:
+        absolute_path = resolve_absolute(course.root_path, sub_path)
+    except Exception:
+        raise Http404("File not found")
+
+    path = Path(absolute_path)
+
+    if not path.exists():
+        raise Http404("File not found on disk")
+
+    content_type, _ = mimetypes.guess_type(str(path))
+    if content_type is None:
+        content_type = "text/plain"
+
+    response = FileResponse(open(path, "rb"), content_type=content_type)
+    response["Content-Disposition"] = f'inline; filename="{path.name}"'
+    return response
+
+
 def serve_media(request: WSGIRequest, course_pk: int, node_pk: int) -> HttpResponse:
     """
     Serve a media file for playback.

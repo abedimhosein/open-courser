@@ -25,9 +25,10 @@
                        {% if progress.last_position %}data-resume="{{ progress.last_position }}"{% endif %}>
                     <source src="{% url 'serve_media' course.pk file.pk %}" type="{{ file.mime_type }}">
                     {% for sub in subtitles %}
-                    <track src="{% url 'serve_media' course.pk file.pk %}" kind="subtitles"
+                    <track src="{% url 'serve_subtitle' course.pk sub.relative_path %}" kind="subtitles"
                            srclang="{{ sub.language|default:'en' }}"
-                           label="{{ sub.language|default:'Subtitles'|upper }}">
+                           label="{{ sub.language|default:'Subtitles'|upper }}"
+                           {% if forloop.first %}default{% endif %}>
                     {% endfor %}
                     Your browser does not support the video tag.
                 </video>

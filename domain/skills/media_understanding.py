@@ -175,7 +175,7 @@ def discover_subtitles(media_path: str | Path, course_root: str | Path) -> list[
 
         if base_stem == media_stem:
             try:
-                relative = str(entry.relative_to(root))
+                relative = entry.relative_to(root).as_posix()
             except ValueError:
                 relative = entry.name
 
