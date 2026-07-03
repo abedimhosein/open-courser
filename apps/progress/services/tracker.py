@@ -50,9 +50,15 @@ def mark_completed(node: CourseNode) -> WatchHistory | None:
     if node.node_type != "file":
         return None
 
+    duration = None
+    if hasattr(node, "media_metadata") and node.media_metadata:
+        duration = node.media_metadata.duration
+
     watch, _ = WatchHistory.objects.get_or_create(course_node=node)
     watch.completed = True
-    watch.save(update_fields=["completed", "last_watched_at"])
+    if duration:
+        watch.duration_watched = duration
+    watch.save(update_fields=["completed", "duration_watched", "last_watched_at"])
     return watch
 
 

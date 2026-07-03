@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Activity - OpenCourser{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb flex-nowrap text-truncate">
+        <li class="breadcrumb-item active">Activity</li>
+    </ol>
+</nav>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <h1 class="mb-0">Activity</h1>
+    <div class="btn-group btn-group-sm" role="group">
+        <a href="?days=7" class="btn btn-outline-secondary {% if days == 7 %}active{% endif %}">7 Days</a>
+        <a href="?days=30" class="btn btn-outline-secondary {% if days == 30 %}active{% endif %}">30 Days</a>
+        <a href="?days=90" class="btn btn-outline-secondary {% if days == 90 %}active{% endif %}">90 Days</a>
+        <a href="?days=365" class="btn btn-outline-secondary {% if days == 365 %}active{% endif %}">1 Year</a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <div>
+                <div class="text-muted small">Total Watch Time</div>
+                <div class="fs-3 fw-bold">{{ total_hours }}h</div>
+            </div>
+            <div class="vr"></div>
+            <div>
+                <div class="text-muted small">Daily Average</div>
+                <div class="fs-3 fw-bold">{{ total_hours|floatformat:1 }}</div>
+            </div>
+            <div class="vr"></div>
+            <div>
+                <div class="text-muted small">Active Days</div>
+                <div class="fs-3 fw-bold">{{ active_days }}</div>
+            </div>
+        </div>
+        <div style="position: relative; height: 300px;">
+            <canvas id="barChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h6 class="card-title text-muted mb-3">Trend</h6>
+        <div style="position: relative; height: 200px;">
+            <canvas id="lineChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+    const labels = {{ labels|safe }};
+    const values = {{ values|safe }};
+
+    const gridColor = 'rgba(255,255,255,0.06)';
+    const tickColor = 'rgba(255,255,255,0.5)';
+    const accent = 'rgba(110, 168, 254,';
+
+    function fmtHours(v) {
+        const h = Math.floor(v);
+        const m = Math.round((v - h) * 60);
+        return h > 0 ? h + 'h ' + m + 'm' : m + 'm';
+    }
+
+    new Chart(document.getElementById('barChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Hours Watched',
+                data: values,
+                backgroundColor: accent + '0.6)',
+                borderColor: accent + '1)',
+                borderWidth: 1,
+                borderRadius: 3,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: function(ctx) { return fmtHours(ctx.parsed.y); } } }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: tickColor, maxRotation: 45, autoSkip: true, maxTicksLimit: 15 } },
+                y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor, callback: function(v) { return v + 'h'; } } }
+            }
+        }
+    });
+
+    const movingAvg = values.map(function(_, i, arr) {
+        const window = 7;
+        const start = Math.max(0, i - window + 1);
+        const slice = arr.slice(start, i + 1);
+        return slice.reduce(function(a, b) { return a + b; }, 0) / slice.length;
+    });
+
+    new Chart(document.getElementById('lineChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Hours Watched',
+                    data: values,
+                    borderColor: accent + '1)',
+                    backgroundColor: accent + '0.05)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    pointBackgroundColor: accent + '1)',
+                },
+                {
+                    label: '7-Day Average',
+                    data: movingAvg,
+                    borderColor: 'rgba(255, 193, 7, 0.8)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 0,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: tickColor, boxWidth: 12 } },
+                tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + fmtHours(ctx.parsed.y); } } }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: tickColor, maxRotation: 45, autoSkip: true, maxTicksLimit: 15 } },
+                y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor, callback: function(v) { return v + 'h'; } } }
+            }
+        }
+    });
+</script>
+{% endblock %}
