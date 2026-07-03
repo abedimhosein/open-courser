@@ -66,6 +66,8 @@ def workspace_create(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         name = request.POST.get("name", "").strip()
         description = request.POST.get("description", "").strip()
+        root_path = request.POST.get("root_path", "").strip()
+        auto_import = request.POST.get("auto_import") == "1"
 
         if not name:
             return render(
@@ -74,9 +76,15 @@ def workspace_create(request: HttpRequest) -> HttpResponse:
                 {"error": "Workspace name is required."},
             )
 
+        if auto_import and not root_path:
+            return render(
+                request,
+                "workspaces/create.html",
+                {"error": "Root directory is required when auto-import is enabled."},
+            )
+
         try:
             workspace = create_workspace(name, description)
-            return redirect("workspace_detail", pk=workspace.pk)
         except ValueError as e:
             return render(
                 request,
@@ -84,7 +92,33 @@ def workspace_create(request: HttpRequest) -> HttpResponse:
                 {"error": str(e)},
             )
 
+        if auto_import and root_path:
+            _import_courses_from_root(workspace, root_path)
+
+        return redirect("workspace_detail", pk=workspace.pk)
+
     return render(request, "workspaces/create.html")
+
+
+def _import_courses_from_root(workspace: Workspace, root_path: str) -> None:
+    """Scan root_path and create a course for each immediate subdirectory."""
+    root = Path(root_path)
+    if not root.exists() or not root.is_dir():
+        return
+
+    for entry in sorted(root.iterdir(), key=lambda e: e.name.lower()):
+        if not entry.is_dir() or entry.name.startswith((".", "_")):
+            continue
+
+        course = Course.objects.create(
+            workspace=workspace,
+            title=entry.name,
+            root_path=str(entry.resolve()),
+        )
+        try:
+            scan_course(course)
+        except Exception:
+            pass
 
 
 def workspace_delete(request: HttpRequest, pk: int) -> HttpResponse:

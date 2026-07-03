@@ -23,9 +23,41 @@
                 <textarea class="form-control" id="description" name="description"
                           rows="2" placeholder="Optional description"></textarea>
             </div>
+            <div class="mb-3">
+                <label for="root_path" class="form-label">Root Directory <span class="text-muted">(optional)</span></label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="root_path" name="root_path"
+                           placeholder="/path/to/courses/root">
+                    <button class="btn btn-outline-secondary"
+                            hx-get="{% url 'browse_directories' %}"
+                            hx-target="#dir-browser-container"
+                            hx-swap="innerHTML">
+                        <i class="fa-solid fa-folder-open me-1"></i>Browse
+                    </button>
+                </div>
+                <div class="form-text">
+                    If provided, all immediate subdirectories will be imported as courses.
+                </div>
+                <div id="dir-browser-container" class="mt-2"></div>
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="auto_import" name="auto_import" value="1">
+                <label class="form-check-label" for="auto_import">
+                    Auto-import subdirectories as courses
+                </label>
+            </div>
             <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Create Workspace</button>
             <a href="{% url 'workspace_list' %}" class="btn btn-secondary"><i class="fa-solid fa-xmark me-1"></i>Cancel</a>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function selectDir(path) {
+        document.getElementById('root_path').value = path;
+        document.getElementById('dir-browser-container').innerHTML = '';
+    }
+</script>
 {% endblock %}
