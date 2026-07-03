@@ -2,6 +2,7 @@ import uuid
 from pathlib import Path
 
 from django.db import models
+from django.utils import timezone
 
 from apps.workspaces.models import Workspace
 
@@ -22,7 +23,7 @@ class Course(models.Model):
     root_path = models.CharField(max_length=1024)
     cover_image = models.ImageField(upload_to=_cover_upload_path, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(default=timezone.now, blank=True)
 
     class Meta:
         ordering = ["title"]

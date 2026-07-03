@@ -3,6 +3,7 @@ from django.urls import path
 from apps.courses import views
 
 urlpatterns = [
+    path("search/", views.course_search, name="course_search"),
     path("<int:pk>/", views.course_detail, name="course_detail"),
     path("<int:pk>/edit/", views.course_edit, name="course_edit"),
     path("<int:pk>/delete/", views.course_delete, name="course_delete"),

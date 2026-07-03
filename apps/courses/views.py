@@ -61,6 +61,20 @@ def course_detail(request: WSGIRequest, pk: int) -> HttpResponse:
     )
 
 
+def course_search(request: WSGIRequest) -> HttpResponse:
+    """Search courses by title across all workspaces."""
+    query = request.GET.get("q", "").strip()
+    results = []
+    if query:
+        courses = Course.objects.filter(title__icontains=query).select_related("workspace")
+        from apps.progress.services.tracker import get_course_progress
+        results = [
+            {"course": c, "progress": get_course_progress(c)}
+            for c in courses
+        ]
+    return render(request, "courses/search.html", {"query": query, "results": results})
+
+
 def course_create(request: WSGIRequest, workspace_pk: int) -> HttpResponse:
     """Create a new course manually."""
     from apps.workspaces.models import Workspace
@@ -245,6 +259,9 @@ def _toggle_node_completion(node: CourseNode) -> None:
             mark_completed(node)
     except WatchHistory.DoesNotExist:
         mark_completed(node)
+
+    from django.utils import timezone
+    Course.objects.filter(pk=node.course_id).update(updated_at=timezone.now())
 
 
 def file_detail(request: WSGIRequest, course_pk: int, node_pk: int) -> HttpResponse:

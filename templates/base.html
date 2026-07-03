@@ -141,6 +141,11 @@
                     <span>OpenCourser</span>
                 </a>
                 <div class="d-flex align-items-center gap-1">
+                    <form class="d-flex me-2" action="{% url 'course_search' %}" method="get">
+                        <input type="search" class="form-control form-control-sm" name="q"
+                               placeholder="Search courses…" value="{{ request.GET.q|default:'' }}"
+                               style="width: 200px;">
+                    </form>
                     <a class="oc-nav-link" href="{% url 'workspace_list' %}">
                         <i class="fa-solid fa-grid-2"></i> Workspaces
                     </a>

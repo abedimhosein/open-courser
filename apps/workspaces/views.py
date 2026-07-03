@@ -22,9 +22,11 @@ class WorkspaceEditForm(ModelForm):
 
 def workspace_list(request: HttpRequest) -> HttpResponse:
     """List all workspaces."""
-    workspaces = Paginator(Workspace.objects.all(), PAGE_SIZE).get_page(
-        request.GET.get("page")
-    )
+    from django.db.models import Count
+    workspaces = Paginator(
+        Workspace.objects.annotate(course_count=Count("courses")).all(),
+        PAGE_SIZE,
+    ).get_page(request.GET.get("page"))
     return render(request, "workspaces/list.html", {"page_obj": workspaces})
 
 
