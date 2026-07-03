@@ -21,7 +21,7 @@ from domain.skills.media_understanding import discover_subtitles
 class CourseEditForm(ModelForm):
     class Meta:
         model = Course
-        fields = ["title", "cover_image", "description"]
+        fields = ["workspace", "title", "cover_image", "description"]
 
 
 def _build_node_tree(nodes):
