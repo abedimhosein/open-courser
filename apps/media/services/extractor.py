@@ -1,9 +1,12 @@
+import logging
 from django.db import transaction
 
 from apps.courses.models import CourseNode
 from apps.media.models import MediaMetadata
 from domain.skills.storage_mapping import resolve_absolute
 from domain.skills.media_understanding import extract_metadata, discover_subtitles
+
+log = logging.getLogger(__name__)
 
 
 @transaction.atomic
@@ -18,7 +21,12 @@ def extract_and_save_metadata(node: CourseNode) -> MediaMetadata | None:
 
     extraction = extract_metadata(absolute_path)
 
-    if extraction.error or not extraction.metadata:
+    if extraction.error:
+        log.debug("Extraction error for %s: %s", node.relative_path, extraction.error)
+        return None
+
+    if not extraction.metadata:
+        log.debug("No metadata returned for %s", node.relative_path)
         return None
 
     md = extraction.metadata

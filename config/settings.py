@@ -3,9 +3,14 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Ensure ffmpeg/ffprobe (installed via WinGet) is in PATH
+_winget_links = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Microsoft", "WinGet", "Links")
+if os.path.isdir(_winget_links) and _winget_links not in os.environ.get("PATH", ""):
+    os.environ["PATH"] = _winget_links + os.pathsep + os.environ.get("PATH", "")
+
 SECRET_KEY = "django-insecure-0@0i4f9-un1#lc0!*!ji(9^$s&s&g*-tvfaju*2cyp(a@hwxq@"
 
-DEBUG = os.environ.get('DEBUG', True)
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = ["*"]
 
@@ -55,15 +60,17 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "data" / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("POSTGRES_DB", "opencourser"),
+        "USER": os.environ.get("POSTGRES_USER", "opencourser"),
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "opencourser"),
+        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
     }
 }
 
 AUTH_PASSWORD_VALIDATORS = []
 
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 

@@ -1,4 +1,16 @@
 services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-opencourser}
+      POSTGRES_USER: ${POSTGRES_USER:-opencourser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-opencourser}
+    ports:
+      - "5432:5432"
+
   app:
     build: .
     ports:
@@ -6,15 +18,19 @@ services:
     env_file:
       - .env
     volumes:
-      - ./data:/app/data
       - ./media:/app/media
-      - ${COURSE_ROOT_0:-C:\nonexistent}:/courses/0:ro
-      - ${COURSE_ROOT_1:-C:\nonexistent}:/courses/1:ro
     environment:
       - DEBUG=False
-      - COURSE_ROOT_0=${COURSE_ROOT_0:-}
-      - COURSE_ROOT_1=${COURSE_ROOT_1:-}
+      - POSTGRES_HOST=db
+      - POSTGRES_DB=${POSTGRES_DB:-opencourser}
+      - POSTGRES_USER=${POSTGRES_USER:-opencourser}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-opencourser}
+    depends_on:
+      - db
     command: >
-      sh -c "mkdir -p /app/data && python manage.py migrate &&
+      sh -c "python manage.py migrate &&
              python manage.py collectstatic --noinput &&
              gunicorn config.wsgi:application --bind 0.0.0.0:8412 --workers 4 --timeout 300"
+
+volumes:
+  pgdata:

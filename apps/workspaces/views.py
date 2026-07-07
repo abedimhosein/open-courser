@@ -8,9 +8,10 @@ from django.forms import ModelForm
 
 from apps.courses.services.scanner import scan_course
 from apps.courses.models import Course
-from apps.progress.services.tracker import get_course_progress
+from apps.progress.services.tracker import get_course_progress, get_workspace_progress
 from apps.workspaces.models import Workspace
 from apps.workspaces.services.manager import create_workspace, delete_workspace
+from domain.skills.drive_discovery import get_available_drives
 
 PAGE_SIZE = 15
 
@@ -23,12 +24,38 @@ class WorkspaceEditForm(ModelForm):
 
 def workspace_list(request: HttpRequest) -> HttpResponse:
     """List all workspaces."""
-    from django.db.models import Count
-    workspaces = Paginator(
-        Workspace.objects.annotate(course_count=Count("courses")).all(),
-        PAGE_SIZE,
-    ).get_page(request.GET.get("page"))
-    return render(request, "workspaces/list.html", {"page_obj": workspaces})
+    from django.db.models import Count, Sum, Q, Subquery, OuterRef, IntegerField
+    from apps.courses.models import Course
+
+    sort_by = request.GET.get("sort", "name")
+    if sort_by not in ("name", "courses", "duration"):
+        sort_by = "name"
+
+    # Subquery for course count to avoid cross-join multiplication
+    course_count_subq = Course.objects.filter(
+        workspace=OuterRef("pk")
+    ).order_by().values("workspace").annotate(
+        c=Count("id")
+    ).values("c")
+
+    workspaces = Workspace.objects.annotate(
+        course_count=Subquery(course_count_subq, output_field=IntegerField()),
+    )
+
+    if sort_by == "duration":
+        workspaces = workspaces.annotate(
+            _total_duration=Sum(
+                "courses__nodes__media_metadata__duration",
+                filter=Q(courses__nodes__media_metadata__duration__isnull=False),
+            ),
+        ).order_by("-_total_duration")
+    elif sort_by == "courses":
+        workspaces = workspaces.order_by("-course_count")
+    else:
+        workspaces = workspaces.order_by("name")
+
+    workspaces = Paginator(workspaces, PAGE_SIZE).get_page(request.GET.get("page"))
+    return render(request, "workspaces/list.html", {"page_obj": workspaces, "current_sort": sort_by})
 
 
 def sort_course_list(courses, sort_by: str) -> list:
@@ -42,6 +69,11 @@ def sort_course_list(courses, sort_by: str) -> list:
             key=lambda x: (x["progress"] or {}).get("overall_percentage", 0) or 0,
             reverse=True,
         )
+    elif sort_by == "duration":
+        course_list.sort(
+            key=lambda x: (x["progress"] or {}).get("total_duration", 0) or 0,
+            reverse=True,
+        )
     else:
         course_list.sort(key=lambda x: x["course"].title.lower())
     return course_list
@@ -50,17 +82,23 @@ def sort_course_list(courses, sort_by: str) -> list:
 def workspace_detail(request: HttpRequest, pk: int) -> HttpResponse:
     """View a workspace with its courses."""
     workspace = get_object_or_404(Workspace, pk=pk)
-    sort_by = request.GET.get("sort", "name")
-    if sort_by not in ("name", "progress"):
-        sort_by = "name"
+    sort_by = request.GET.get("sort", "progress")
+    if sort_by not in ("name", "progress", "duration"):
+        sort_by = "progress"
     courses = Course.objects.filter(workspace=workspace)
     course_list = Paginator(sort_course_list(courses, sort_by), PAGE_SIZE).get_page(
         request.GET.get("page")
     )
+    workspace_progress = get_workspace_progress(workspace)
     return render(
         request,
         "workspaces/detail.html",
-        {"workspace": workspace, "course_list": course_list, "current_sort": sort_by},
+        {
+            "workspace": workspace,
+            "course_list": course_list,
+            "current_sort": sort_by,
+            "workspace_progress": workspace_progress,
+        },
     )
 
 
@@ -165,12 +203,13 @@ def workspace_scan_all(request: HttpRequest, pk: int) -> HttpResponse:
         result = scan_course(course)
         total_files += result.total_nodes
 
-    sort_by = request.GET.get("sort", "name")
-    if sort_by not in ("name", "progress"):
-        sort_by = "name"
+    sort_by = request.GET.get("sort", "progress")
+    if sort_by not in ("name", "progress", "duration"):
+        sort_by = "progress"
     course_list = Paginator(sort_course_list(courses, sort_by), PAGE_SIZE).get_page(
         request.GET.get("page")
     )
+    workspace_progress = get_workspace_progress(workspace)
     return render(
         request,
         "workspaces/detail.html",
@@ -178,6 +217,7 @@ def workspace_scan_all(request: HttpRequest, pk: int) -> HttpResponse:
             "workspace": workspace,
             "course_list": course_list,
             "current_sort": sort_by,
+            "workspace_progress": workspace_progress,
             "scan_summary": {
                 "total_files": total_files,
             },
@@ -192,6 +232,7 @@ def browse_directories(request: HttpRequest) -> HttpResponse:
     """
     current_path_str = request.GET.get("path", "").strip()
     filter_query = request.GET.get("q", "").strip().lower()
+    drives = get_available_drives()
 
     if not current_path_str:
         configured = getattr(settings, "COURSE_ROOTS", [])
@@ -203,31 +244,40 @@ def browse_directories(request: HttpRequest) -> HttpResponse:
                 directories.append({"name": host_name, "path": container_path})
             if filter_query:
                 directories = [d for d in directories if filter_query in d["name"].lower()]
-                template = "workspaces/_directory_list.html"
-            else:
-                template = "workspaces/_directory_browser.html"
             return render(
                 request,
-                template,
+                "workspaces/_directory_browser.html",
                 {
                     "current_path": "Course Roots",
                     "parent_path": "",
                     "directories": directories,
                     "filter_query": filter_query,
+                    "drives": drives,
                 },
             )
-        if Path("/").exists():
-            candidates = [Path(d) for d in ("/", str(Path.home())) if Path(d).exists()]
-            current_path = candidates[0] if candidates else Path.home()
-        else:
-            current_path = Path.home()
-    else:
-        current_path = Path(current_path_str).resolve()
+        # Show drives by default when no path is given
+        return render(
+            request,
+            "workspaces/_directory_browser.html",
+            {
+                "current_path": "",
+                "parent_path": "",
+                "directories": [],
+                "filter_query": filter_query,
+                "drives": drives,
+                "show_drives_only": True,
+            },
+        )
+
+    current_path = Path(current_path_str).resolve()
 
     if not current_path.exists() or not current_path.is_dir():
         current_path = Path.home()
 
-    parent_path = str(current_path.parent) if current_path.parent != current_path else ""
+    # Always set parent_path for navigation (empty string = show drives list)
+    parent_path = ""
+    if current_path.parent != current_path:
+        parent_path = str(current_path.parent)
 
     try:
         entries = sorted(
@@ -248,18 +298,20 @@ def browse_directories(request: HttpRequest) -> HttpResponse:
     if filter_query:
         directories = [d for d in directories if filter_query in d["name"].lower()]
 
-    if filter_query:
-        template = "workspaces/_directory_list.html"
-    else:
-        template = "workspaces/_directory_browser.html"
+    # Determine current drive letter for highlighting
+    current_drive = ""
+    if current_path.drive:
+        current_drive = f"{current_path.drive}\\"
 
     return render(
         request,
-        template,
+        "workspaces/_directory_browser.html",
         {
             "current_path": str(current_path),
             "parent_path": parent_path,
             "directories": directories,
             "filter_query": filter_query,
+            "drives": drives,
+            "current_drive": current_drive,
         },
     )

@@ -147,6 +147,38 @@ def get_course_progress(course) -> dict | None:
     }
 
 
+def get_workspace_progress(workspace) -> dict:
+    """Aggregate progress across all courses in a workspace."""
+    from apps.courses.models import Course
+
+    courses = Course.objects.filter(workspace=workspace)
+    total_duration = 0.0
+    completed_duration = 0.0
+    total_files = 0
+    completed_files = 0
+
+    for course in courses:
+        progress = get_course_progress(course)
+        if progress:
+            total_duration += progress["total_duration"] or 0
+            completed_duration += progress["completed_duration"] or 0
+            total_files += progress["total_files"]
+            completed_files += progress["completed_files"]
+
+    remaining_duration = total_duration - completed_duration
+    overall_percentage = (completed_duration / total_duration * 100) if total_duration > 0 else 0
+
+    return {
+        "total_duration": total_duration,
+        "completed_duration": completed_duration,
+        "remaining_duration": remaining_duration,
+        "overall_percentage": overall_percentage,
+        "total_files": total_files,
+        "completed_files": completed_files,
+        "course_count": courses.count(),
+    }
+
+
 def reset_file_progress(node: CourseNode) -> None:
     """Delete watch history for a file node."""
     if node.node_type != "file":

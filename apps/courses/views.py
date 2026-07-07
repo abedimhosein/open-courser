@@ -67,7 +67,6 @@ def course_search(request: WSGIRequest) -> HttpResponse:
     results = []
     if query:
         courses = Course.objects.filter(title__icontains=query).select_related("workspace")
-        from apps.progress.services.tracker import get_course_progress
         results = [
             {"course": c, "progress": get_course_progress(c)}
             for c in courses

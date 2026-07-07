@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import logging
 from pathlib import Path
 
 from django.db import transaction
@@ -17,6 +18,8 @@ ARCHIVE_EXTENSIONS = {".zip", ".tar", ".gz", ".bz2", ".7z", ".rar"}
 SOURCE_EXTENSIONS = {".py", ".js", ".ts", ".html", ".css", ".scss", ".java", ".cpp", ".c", ".h", ".rs", ".go", ".rb", ".php"}
 
 CONTENT_EXTENSIONS = VIDEO_EXTENSIONS | {".pdf", ".docx", ".html"}
+
+log = logging.getLogger(__name__)
 
 MIME_TYPE_MAP = {
     ".mp4": "video/mp4",
@@ -54,19 +57,6 @@ def _classify_file_type(ext: str) -> str:
     if ext in SOURCE_EXTENSIONS:
         return "source_code"
     return "other"
-
-
-def _get_natural_sort_key(name: str):
-    """Split name into (text, number) parts for natural sorting."""
-    import re
-    parts = re.split(r'(\d+)', name)
-    result = []
-    for part in parts:
-        if part.isdigit():
-            result.append((0, int(part)))
-        else:
-            result.append((1, part.lower()))
-    return result
 
 
 @transaction.atomic
@@ -141,7 +131,9 @@ def scan_course(course: Course) -> ScanResult:
                 for key, val in defaults.items():
                     setattr(node, key, val)
                 node.save()
-            if file_type in ("video", "audio") and node.media_metadata is None:
+            if file_type in ("video", "audio") and (
+                node.media_metadata is None or node.media_metadata.duration is None
+            ):
                 media_nodes.append(node)
         else:
             node = CourseNode.objects.create(course=course, relative_path=rel_path, **defaults)
@@ -162,8 +154,8 @@ def scan_course(course: Course) -> ScanResult:
     for node in media_nodes:
         try:
             extract_and_save_metadata(node)
-        except Exception:
-            pass
+        except Exception as e:
+            log.warning("Failed to extract metadata for %s: %s", node.relative_path, e)
 
     return result
 

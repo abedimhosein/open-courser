@@ -41,7 +41,7 @@ OpenCourser is a self-hosted Django web application that helps you organize, bro
 | | Dark theme | Bootstrap 5 dark mode throughout |
 | | Responsive | Supports down to 360px viewport (Galaxy S8+) with hamburger menus |
 | | Icons | Font Awesome 6 on every button and interactive element |
-| **Deployment** | Docker | Ready-to-deploy with Docker Compose, multiple host directory bind mounts |
+| **Deployment** | Docker | Ready-to-deploy with Docker Compose, PostgreSQL included |
 
 ---
 
@@ -50,7 +50,7 @@ OpenCourser is a self-hosted Django web application that helps you organize, bro
 | Layer | Technology |
 |-------|------------|
 | Backend | Django 5.2, Python 3.12 |
-| Database | SQLite |
+| Database | PostgreSQL 16 |
 | Frontend | Bootstrap 5 (dark), HTMX, Alpine.js |
 | Icons | Font Awesome 6 |
 | Media | ffmpeg / ffprobe |
@@ -67,7 +67,34 @@ OpenCourser is a self-hosted Django web application that helps you organize, bro
 - Python 3.12+
 - pip
 - Virtual environment (recommended)
-- ffmpeg (optional, for richer media metadata)
+- **ffmpeg** (required for media metadata extraction — duration, codec, resolution)
+- PostgreSQL (local development) or Docker
+
+### Installing ffmpeg
+
+ffmpeg provides `ffprobe`, which extracts video/audio metadata (duration, codec, resolution). **Without it, duration will not be extracted.**
+
+**Windows:**
+```powershell
+winget install Gyan.FFmpeg
+```
+
+Or download from https://ffmpeg.org/download.html and add to your PATH.
+
+**macOS:**
+```bash
+brew install ffmpeg
+```
+
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt update && sudo apt install ffmpeg
+```
+
+**Verify installation:**
+```bash
+ffprobe -version
+```
 
 ### Local Development
 
@@ -84,6 +111,12 @@ source .venv/bin/activate       # Linux / macOS
 # Install dependencies
 pip install -r requirements.txt
 
+# Configure database connection in .env
+# POSTGRES_HOST=localhost (default)
+# POSTGRES_DB=opencourser
+# POSTGRES_USER=opencourser
+# POSTGRES_PASSWORD=opencourser
+
 # Run database migrations
 python manage.py migrate
 
@@ -93,41 +126,58 @@ python manage.py runserver
 
 Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
 
-### Docker
+### Running with Docker
+
+Docker runs both PostgreSQL and the app. External drives (D:, E:, etc.) are **not accessible** inside Docker containers on Windows — use local development for courses on external drives.
 
 ```bash
-# Define course root directories in .env
-cat <<EOF > .env
-COURSE_ROOT_0=C:\Users\You\Downloads
-COURSE_ROOT_1=D:\Courses
-EOF
-
 # Build and start
-docker compose up -d
+docker compose up -d --build
 ```
 
-The application is available at [http://localhost:8000](http://localhost:8000).
+The application is available at [http://localhost:8412](http://localhost:8412).
 
-> **How it works:** Each `COURSE_ROOT_N` env var maps to a read-only volume mount at `/courses/N` inside the container. When you click **Browse** in the workspace/course create form, only the configured roots are shown as starting points — not the entire container filesystem.
+### Running Database in Docker, App Locally
 
-> **Adding more roots:** Add a new `COURSE_ROOT_N` line in `.env` and a matching volume mount in `docker-compose.yml`, then restart.
+If you don't have PostgreSQL installed locally, run only the database in Docker:
 
-### Docker Volumes
+```bash
+# Start PostgreSQL container
+docker run -d --name opencourser-db \
+  -e POSTGRES_DB=opencourser \
+  -e POSTGRES_USER=opencourser \
+  -e POSTGRES_PASSWORD=opencourser \
+  -p 5432:5432 \
+  postgres:16-alpine
 
-| Volume | Purpose |
-|--------|---------|
-| `./data:/app/data` | SQLite database persistence |
-| `./media:/app/media` | Uploaded cover images |
-| `${COURSE_ROOT_0}:/courses/0:ro` | First host course directory (read-only) |
-| `${COURSE_ROOT_1}:/courses/1:ro` | Second host course directory (read-only) |
+# Then run the app locally
+python manage.py migrate
+python manage.py runserver
+```
+
+To stop the database:
+```bash
+docker stop opencourser-db
+```
+
+### Course Root Directories
+
+Configure which directories to scan via environment variables in `.env`:
+
+```env
+COURSE_ROOT_0="C:\Users\You\Downloads"
+COURSE_ROOT_1="D:\Courses"
+```
+
+Each `COURSE_ROOT_N` maps to a read-only volume mount at `/courses/N` inside the Docker container.
 
 ---
 
 ## Usage
 
-1. **Create a Workspace** — give it a name and optionally point it to a course root directory (Docker shows configured roots; local dev browses the filesystem).
+1. **Create a Workspace** — give it a name and optionally point it to a course root directory.
 2. **Upload a Cover Image** *(optional)* — via the Edit page for each workspace or course.
-3. **Scan Now** — discovers courses, media files, and extracts metadata.
+3. **Scan Now** — discovers courses, media files, and extracts metadata (duration, codec, resolution).
 4. **Browse Courses** — cards show progress bars; sort by name or progress; paginated 15/page.
 5. **Search** — use the navbar search to find courses across all workspaces.
 6. **Play a File** — browser-native player with auto-resume and position tracking every 3 seconds.
@@ -184,6 +234,39 @@ python manage.py test
 
 # Notes tests only
 python manage.py test apps.notes
+```
+
+---
+
+## Troubleshooting
+
+### Duration not extracted for videos
+
+**Cause:** `ffprobe` is not installed or not in your PATH.
+
+**Fix:** Install ffmpeg (see [Installing ffmpeg](#installing-ffmpeg)) and verify:
+```bash
+ffprobe -version
+```
+
+Then rescan your courses.
+
+### PostgreSQL connection refused
+
+**Cause:** PostgreSQL is not running.
+
+**Fix:** Either start the Docker database container or install PostgreSQL locally:
+```bash
+docker start opencourser-db
+```
+
+### External drives not accessible in Docker
+
+**Cause:** Docker Desktop on Windows with WSL2 backend cannot mount external USB drives into containers.
+
+**Fix:** Run the app locally instead of in Docker:
+```bash
+python manage.py runserver
 ```
 
 ---

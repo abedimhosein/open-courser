@@ -1,8 +1,7 @@
 import markdown
 from django.core.handlers.wsgi import WSGIRequest
 from django.http import HttpResponse, HttpResponseNotAllowed
-from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse
+from django.shortcuts import render, get_object_or_404
 
 from apps.notes.models import Note
 from apps.courses.models import CourseNode, Course

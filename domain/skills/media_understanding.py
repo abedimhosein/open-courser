@@ -71,6 +71,8 @@ def extract_metadata(file_path: str | Path) -> MediaExtractionResult:
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=300,
         )
     except FileNotFoundError:

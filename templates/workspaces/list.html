@@ -8,6 +8,17 @@
     <a href="{% url 'workspace_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Add Workspace</a>
 </div>
 
+<div class="d-flex align-items-center gap-3 mb-3">
+    <div class="btn-group btn-group-sm" role="group">
+        <a href="?sort=name" class="btn btn-outline-secondary {% if current_sort == 'name' %}active{% endif %}"><i class="fa-solid fa-arrow-down-a-z me-1"></i>Name</a>
+        <a href="?sort=courses" class="btn btn-outline-secondary {% if current_sort == 'courses' %}active{% endif %}"><i class="fa-solid fa-book me-1"></i>Courses</a>
+        <a href="?sort=duration" class="btn btn-outline-secondary {% if current_sort == 'duration' %}active{% endif %}"><i class="fa-solid fa-clock me-1"></i>Duration</a>
+    </div>
+    {% if page_obj.paginator.num_pages > 1 %}
+    <small class="text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</small>
+    {% endif %}
+</div>
+
 {% if page_obj %}
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
     {% for workspace in page_obj %}
@@ -59,19 +70,19 @@
     <ul class="pagination justify-content-center">
         {% if page_obj.has_previous %}
         <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}"><i class="fa-solid fa-chevron-left me-1"></i>Previous</a>
+            <a class="page-link" href="?sort={{ current_sort }}&page={{ page_obj.previous_page_number }}"><i class="fa-solid fa-chevron-left me-1"></i>Previous</a>
         </li>
         {% else %}
         <li class="page-item disabled"><span class="page-link"><i class="fa-solid fa-chevron-left me-1"></i>Previous</span></li>
         {% endif %}
         {% for num in page_obj.paginator.page_range %}
         <li class="page-item {% if num == page_obj.number %}active{% endif %}">
-            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            <a class="page-link" href="?sort={{ current_sort }}&page={{ num }}">{{ num }}</a>
         </li>
         {% endfor %}
         {% if page_obj.has_next %}
         <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next<i class="fa-solid fa-chevron-right ms-1"></i></a>
+            <a class="page-link" href="?sort={{ current_sort }}&page={{ page_obj.next_page_number }}">Next<i class="fa-solid fa-chevron-right ms-1"></i></a>
         </li>
         {% else %}
         <li class="page-item disabled"><span class="page-link">Next<i class="fa-solid fa-chevron-right ms-1"></i></span></li>
