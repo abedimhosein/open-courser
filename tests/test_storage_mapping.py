@@ -52,7 +52,7 @@ class TestValidateAndResolve:
         assert not result.is_valid
         assert "empty" in (result.reason or "")
 
-    def rejects_path_traversal(self, tmp_path: Path):
+    def test_rejects_path_traversal(self, tmp_path: Path):
         course_root = tmp_path / "courses"
         course_root.mkdir()
 

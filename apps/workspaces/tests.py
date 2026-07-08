@@ -74,7 +74,7 @@ class WorkspaceDetailViewTest(TestCase):
         self.assertEqual(len(response.context["course_list"]), 2)
 
     def test_detail_sort_by_name(self):
-        """Test that detail sorts courses by name by default."""
+        """Test that detail can sort courses by name."""
         Course.objects.create(
             workspace=self.workspace,
             title="Z Course",
@@ -87,6 +87,7 @@ class WorkspaceDetailViewTest(TestCase):
         )
         response = self.client.get(
             reverse("workspace_detail", kwargs={"pk": self.workspace.pk})
+            + "?sort=name"
         )
         self.assertEqual(response.context["current_sort"], "name")
         titles = [item["course"].title for item in response.context["course_list"]]
@@ -100,13 +101,13 @@ class WorkspaceDetailViewTest(TestCase):
         )
         self.assertEqual(response.context["current_sort"], "progress")
 
-    def test_detail_invalid_sort_defaults_to_name(self):
-        """Test that invalid sort parameter defaults to name."""
+    def test_detail_invalid_sort_defaults_to_progress(self):
+        """Test that invalid sort parameter defaults to progress."""
         response = self.client.get(
             reverse("workspace_detail", kwargs={"pk": self.workspace.pk})
             + "?sort=invalid"
         )
-        self.assertEqual(response.context["current_sort"], "name")
+        self.assertEqual(response.context["current_sort"], "progress")
 
 
 class WorkspaceCreateViewTest(TestCase):

@@ -223,7 +223,7 @@ Each app follows a **presentation → application → domain** layering:
 ## Testing
 
 ```bash
-# Run all tests (66+)
+# Run all tests (134)
 python -m pytest --tb=short -q
 
 # Domain skill tests only
@@ -235,6 +235,24 @@ python manage.py test
 # Notes tests only
 python manage.py test apps.notes
 ```
+
+### Test Coverage Summary
+
+| File | Tests | What's Covered |
+|------|-------|----------------|
+| `test_storage_mapping.py` | 32 | Path resolution, Docker translation, traversal prevention |
+| `test_content_discovery.py` | 6 | Directory scanning, incremental changes, snapshots |
+| `test_progress_tracking.py` | 11 | File/course progress, playback validation |
+| `test_media_understanding.py` | 16 | ffprobe parsing, subtitle discovery, MP4/MKV headers |
+| `test_drive_discovery.py` | 3 | Drive enumeration |
+| `test_scanner.py` | 10 | File classification, course scanning, duration updates |
+| `test_tracker.py` | 12 | Playback recording, completion, progress aggregation |
+| `test_views_courses.py` | 17 | Lock, complete, reset, toggle, tag CRUD |
+| `test_views_notes.py` | 5 | Note from subtitle, note list |
+| `test_views_media.py` | 3 | Media/subtitle serving |
+| `test_views_progress.py` | 8 | Activity, position, completion, reset |
+| `test_template_tags.py` | 7 | Duration filter |
+| **Total** | **134** | |
 
 ---
 
