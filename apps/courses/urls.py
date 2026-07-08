@@ -14,6 +14,10 @@ urlpatterns = [
     path("<int:pk>/progress/", views.course_progress_partial, name="course_progress_partial"),
     path("<int:pk>/files/", views.course_files_partial, name="course_files_partial"),
     path("create/<int:workspace_pk>/", views.course_create, name="course_create"),
+    path("tags/", views.tag_list, name="tag_list"),
+    path("tags/<int:pk>/edit/", views.tag_edit, name="tag_edit"),
+    path("tags/<int:pk>/delete/", views.tag_delete, name="tag_delete"),
+    path("tags/<int:pk>/courses/", views.tag_courses, name="tag_courses"),
     path("<int:course_pk>/nodes/<int:node_pk>/", views.file_detail, name="file_detail"),
     path(
         "<int:course_pk>/nodes/<int:node_pk>/toggle/",

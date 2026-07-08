@@ -12,6 +12,18 @@ def _cover_upload_path(_instance, filename: str) -> str:
     return f"covers/courses/{uuid.uuid4().hex}{ext}"
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=64, unique=True)
+    slug = models.SlugField(max_length=64, unique=True)
+    color = models.CharField(max_length=7, default="#6c757d")
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class Course(models.Model):
     workspace = models.ForeignKey(
         Workspace,
@@ -23,6 +35,7 @@ class Course(models.Model):
     root_path = models.CharField(max_length=1024)
     cover_image = models.ImageField(upload_to=_cover_upload_path, blank=True)
     locked = models.BooleanField(default=False)
+    tags = models.ManyToManyField(Tag, blank=True, related_name="courses")
     total_duration = models.FloatField(default=0, db_index=True)
     watched_duration = models.FloatField(default=0, db_index=True)
     remaining_duration = models.FloatField(default=0)

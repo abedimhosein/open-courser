@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ tag.name }} - OpenCourser{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'tag_list' %}">Tags</a></li>
+        <li class="breadcrumb-item active">{{ tag.name }}</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h1 class="mb-4">Edit Tag</h1>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="name" class="form-label">Name</label>
+                <input type="text" class="form-control" id="name" name="name"
+                       value="{{ tag.name }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="color" class="form-label">Color</label>
+                <div class="d-flex align-items-center gap-3">
+                    <input type="color" class="form-control form-control-color" id="color" name="color"
+                           value="{{ tag.color }}">
+                    <span class="badge" style="background-color: {{ tag.color }}; font-size: 1em;">Preview</span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i>Save</button>
+            <a href="{% url 'tag_list' %}" class="btn btn-secondary"><i class="fa-solid fa-xmark me-1"></i>Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

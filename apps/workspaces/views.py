@@ -7,7 +7,7 @@ from django.core.paginator import Paginator
 from django.forms import ModelForm
 
 from apps.courses.services.scanner import scan_course
-from apps.courses.models import Course
+from apps.courses.models import Course, Tag
 from apps.progress.services.tracker import get_course_progress, get_workspace_progress
 from apps.workspaces.models import Workspace
 from apps.workspaces.services.manager import create_workspace, delete_workspace
@@ -81,11 +81,15 @@ def workspace_detail(request: HttpRequest, pk: int) -> HttpResponse:
     sort_by = request.GET.get("sort", "progress")
     if sort_by not in ("name", "progress", "duration"):
         sort_by = "progress"
+    tag_slug = request.GET.get("tag", "")
     courses = Course.objects.filter(workspace=workspace)
+    if tag_slug:
+        courses = courses.filter(tags__slug=tag_slug)
     course_list = Paginator(sort_course_list(courses, sort_by), PAGE_SIZE).get_page(
         request.GET.get("page")
     )
     workspace_progress = get_workspace_progress(workspace)
+    available_tags = Tag.objects.filter(courses__workspace=workspace).distinct()
     return render(
         request,
         "workspaces/detail.html",
@@ -94,6 +98,8 @@ def workspace_detail(request: HttpRequest, pk: int) -> HttpResponse:
             "course_list": course_list,
             "current_sort": sort_by,
             "workspace_progress": workspace_progress,
+            "available_tags": available_tags,
+            "current_tag": tag_slug,
         },
     )
 
@@ -202,8 +208,29 @@ def workspace_scan_all(request: HttpRequest, pk: int) -> HttpResponse:
     sort_by = request.GET.get("sort", "progress")
     if sort_by not in ("name", "progress", "duration"):
         sort_by = "progress"
-    course_list = Paginator(sort_course_list(courses, sort_by), PAGE_SIZE).get_page(
+    tag_slug = request.GET.get("tag", "")
+    filtered_courses = Course.objects.filter(workspace=workspace)
+    if tag_slug:
+        filtered_courses = filtered_courses.filter(tags__slug=tag_slug)
+    course_list = Paginator(sort_course_list(filtered_courses, sort_by), PAGE_SIZE).get_page(
         request.GET.get("page")
+    )
+    workspace_progress = get_workspace_progress(workspace)
+    available_tags = Tag.objects.filter(courses__workspace=workspace).distinct()
+    return render(
+        request,
+        "workspaces/detail.html",
+        {
+            "workspace": workspace,
+            "course_list": course_list,
+            "current_sort": sort_by,
+            "workspace_progress": workspace_progress,
+            "available_tags": available_tags,
+            "current_tag": tag_slug,
+            "scan_summary": {
+                "total_files": total_files,
+            },
+        },
     )
     workspace_progress = get_workspace_progress(workspace)
     return render(

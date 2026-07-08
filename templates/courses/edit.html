@@ -91,6 +91,20 @@
                 <div class="form-text">When locked, scanning is disabled to prevent accidental changes.</div>
             </div>
 
+            <div class="mb-3">
+                <label for="{{ form.tags.id_for_label }}" class="form-label">Tags</label>
+                <select class="form-select {% if form.tags.errors %}is-invalid{% endif %}"
+                        id="{{ form.tags.id_for_label }}" name="tags" multiple size="5">
+                    {% for tag in form.tags.field.queryset %}
+                    <option value="{{ tag.pk }}" {% if tag in course.tags.all %}selected{% endif %}>{{ tag.name }}</option>
+                    {% endfor %}
+                </select>
+                {% if form.tags.errors %}
+                <div class="invalid-feedback">{{ form.tags.errors.0 }}</div>
+                {% endif %}
+                <div class="form-text">Hold Ctrl/Cmd to select multiple tags. Create tags in the course detail view or Django admin.</div>
+            </div>
+
             <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i>Save</button>
             <a href="{% url 'course_detail' course.pk %}" class="btn btn-secondary"><i class="fa-solid fa-xmark me-1"></i>Cancel</a>
         </form>

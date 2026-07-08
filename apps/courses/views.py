@@ -1,10 +1,12 @@
 from django.core.handlers.wsgi import WSGIRequest
+from django import forms
 from django.forms import ModelForm
 from django.http import HttpResponse, HttpResponseNotAllowed
+from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 
-from apps.courses.models import Course, CourseNode
+from apps.courses.models import Course, CourseNode, Tag
 from apps.courses.services.scanner import scan_course
 from apps.media.services.extractor import extract_and_save_metadata
 from apps.progress.models import WatchHistory
@@ -14,6 +16,7 @@ from apps.progress.services.tracker import (
     mark_completed,
     reset_file_progress,
 )
+from apps.workspaces.views import sort_course_list, PAGE_SIZE
 from domain.skills.storage_mapping import resolve_absolute, MissingRootError
 from domain.skills.media_understanding import discover_subtitles
 
@@ -21,7 +24,10 @@ from domain.skills.media_understanding import discover_subtitles
 class CourseEditForm(ModelForm):
     class Meta:
         model = Course
-        fields = ["workspace", "title", "cover_image", "description", "locked"]
+        fields = ["workspace", "title", "cover_image", "description", "locked", "tags"]
+        widgets = {
+            "tags": forms.SelectMultiple(attrs={"class": "form-select", "size": "5"}),
+        }
 
 
 def _build_node_tree(nodes):
@@ -357,5 +363,70 @@ def file_detail(request: WSGIRequest, course_pk: int, node_pk: int) -> HttpRespo
             "subtitles": subtitles,
             "progress": progress,
             "error": error,
+        },
+    )
+
+
+def tag_list(request: WSGIRequest) -> HttpResponse:
+    """List all tags with course counts."""
+    from django.db.models import Count
+    tags = Tag.objects.annotate(course_count=Count("courses")).order_by("name")
+
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        color = request.POST.get("color", "#6c757d").strip()
+        if name:
+            Tag.objects.get_or_create(
+                name__iexact=name,
+                defaults={"name": name, "slug": name.lower().replace(" ", "-"), "color": color},
+            )
+        return redirect("tag_list")
+
+    return render(request, "courses/tag_list.html", {"tags": tags})
+
+
+def tag_edit(request: WSGIRequest, pk: int) -> HttpResponse:
+    """Edit a tag's name and color."""
+    tag = get_object_or_404(Tag, pk=pk)
+
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        color = request.POST.get("color", "#6c757d").strip()
+        if name:
+            tag.name = name
+            tag.slug = name.lower().replace(" ", "-")
+            tag.color = color
+            tag.save()
+        return redirect("tag_list")
+
+    return render(request, "courses/tag_edit.html", {"tag": tag})
+
+
+def tag_delete(request: WSGIRequest, pk: int) -> HttpResponse:
+    """Delete a tag."""
+    tag = get_object_or_404(Tag, pk=pk)
+    if request.method == "POST":
+        tag.delete()
+        return redirect("tag_list")
+    return render(request, "courses/tag_confirm_delete.html", {"tag": tag})
+
+
+def tag_courses(request: WSGIRequest, pk: int) -> HttpResponse:
+    """List all courses with a specific tag."""
+    tag = get_object_or_404(Tag, pk=pk)
+    sort_by = request.GET.get("sort", "name")
+    if sort_by not in ("name", "progress", "duration"):
+        sort_by = "name"
+    courses = Course.objects.filter(tags=tag)
+    course_list = Paginator(sort_course_list(courses, sort_by), PAGE_SIZE).get_page(
+        request.GET.get("page")
+    )
+    return render(
+        request,
+        "courses/tag_courses.html",
+        {
+            "tag": tag,
+            "course_list": course_list,
+            "current_sort": sort_by,
         },
     )
