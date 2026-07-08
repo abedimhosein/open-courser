@@ -126,11 +126,14 @@
             <div class="card-body">
                 <ul class="list-unstyled mb-0">
                     {% for sub in subtitles %}
-                    <li>
-                        {% if sub.language %}
-                        <span class="badge bg-secondary">{{ sub.language|upper }}</span>
-                        {% endif %}
-                        <small class="text-muted">{{ sub.format|upper }}</small>
+                    <li class="d-flex justify-content-between align-items-center">
+                        <div>
+                            {% if sub.language %}
+                            <span class="badge bg-secondary">{{ sub.language|upper }}</span>
+                            {% endif %}
+                            <small class="text-muted">{{ sub.format|upper }}</small>
+                        </div>
+                        <small class="text-success"><i class="fa-solid fa-closed-captioning me-1"></i>In player</small>
                     </li>
                     {% endfor %}
                 </ul>

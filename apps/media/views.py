@@ -10,7 +10,8 @@ from domain.skills.storage_mapping import resolve_absolute
 
 
 def serve_subtitle(request: WSGIRequest, course_pk: int, sub_path: str) -> HttpResponse:
-    """Serve a subtitle file for a course."""
+    """Serve a subtitle file for a course, converting SRT to VTT if needed."""
+    import re
     course = get_object_or_404(Course, pk=course_pk)
 
     try:
@@ -26,6 +27,17 @@ def serve_subtitle(request: WSGIRequest, course_pk: int, sub_path: str) -> HttpR
     content_type, _ = mimetypes.guess_type(str(path))
     if content_type is None:
         content_type = "text/plain"
+
+    # Convert SRT to VTT on the fly for browser playback
+    if path.suffix.lower() == ".srt":
+        content = path.read_text(encoding="utf-8", errors="replace")
+        # Add VTT header and convert timestamps
+        vtt_content = "WEBVTT\n\n"
+        # Replace comma with dot in timestamps: 00:00:01,000 -> 00:00:01.000
+        vtt_content += re.sub(r"(\d{2}:\d{2}:\d{2}),(\d{3})", r"\1.\2", content)
+        response = HttpResponse(vtt_content, content_type="text/vtt")
+        response["Content-Disposition"] = f'inline; filename="{path.stem}.vtt"'
+        return response
 
     response = FileResponse(open(path, "rb"), content_type=content_type)
     response["Content-Disposition"] = f'inline; filename="{path.name}"'
