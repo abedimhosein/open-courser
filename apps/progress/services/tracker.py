@@ -110,6 +110,13 @@ def get_course_progress(course) -> dict | None:
     if not file_nodes:
         return None
 
+    # Batch-load all watch history in one query
+    node_ids = [n.pk for n in file_nodes]
+    watch_map = {
+        wh.course_node_id: wh
+        for wh in WatchHistory.objects.filter(course_node_id__in=node_ids)
+    }
+
     file_progresses: list[DomainFileProgress] = []
     durations: list[float | None] = []
 
@@ -119,8 +126,8 @@ def get_course_progress(course) -> dict | None:
             duration = node.media_metadata.duration
         durations.append(duration)
 
-        try:
-            watch = WatchHistory.objects.get(course_node=node)
+        watch = watch_map.get(node.pk)
+        if watch:
             if watch.completed:
                 fp = DomainFileProgress(
                     watched_duration=duration or 0,
@@ -130,7 +137,7 @@ def get_course_progress(course) -> dict | None:
                 )
             else:
                 fp = calculate_file_progress(watch.duration_watched, duration, watch.position)
-        except WatchHistory.DoesNotExist:
+        else:
             fp = calculate_file_progress(0.0, duration, 0.0)
 
         file_progresses.append(fp)
