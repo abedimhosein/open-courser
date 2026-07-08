@@ -40,12 +40,11 @@ def workspace_list(request: HttpRequest) -> HttpResponse:
 
     workspaces = Workspace.objects.annotate(
         course_count=Subquery(course_count_subq, output_field=IntegerField()),
+        total_dur=Sum("courses__total_duration"),
     )
 
     if sort_by == "duration":
-        workspaces = workspaces.annotate(
-            _total_duration=Sum("courses__total_duration"),
-        ).order_by("-_total_duration")
+        workspaces = workspaces.order_by("-total_dur")
     elif sort_by == "courses":
         workspaces = workspaces.order_by("-course_count")
     else:
