@@ -18,7 +18,7 @@ from apps.progress.services.tracker import (
 )
 from apps.workspaces.views import sort_course_list, PAGE_SIZE
 from domain.skills.storage_mapping import resolve_absolute, MissingRootError
-from domain.skills.media_understanding import discover_subtitles
+from domain.skills.media_understanding import discover_subtitles, SubtitleInfo
 
 
 class CourseEditForm(ModelForm):
@@ -349,6 +349,18 @@ def file_detail(request: WSGIRequest, course_pk: int, node_pk: int) -> HttpRespo
     if absolute_path and FilePath(absolute_path).exists() and node.file_type in ("video", "audio"):
         metadata_model = extract_and_save_metadata(node)
         subtitles = discover_subtitles(absolute_path, course.root_path)
+
+        # Fallback: use stored subtitle paths if runtime discovery found nothing
+        if not subtitles and metadata_model and metadata_model.subtitle_paths:
+            for sub_rel in metadata_model.subtitle_paths:
+                sub_file = FilePath(course.root_path) / sub_rel
+                if sub_file.exists():
+                    fmt = sub_file.suffix.lstrip(".")
+                    subtitles.append(SubtitleInfo(
+                        relative_path=sub_rel,
+                        language=None,
+                        format=fmt,
+                    ))
 
     progress = get_file_progress(node)
 

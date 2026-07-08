@@ -127,8 +127,10 @@
                 <ul class="list-unstyled mb-0">
                     {% for sub in subtitles %}
                     <li>
-                        <span class="badge bg-secondary">{{ sub.language|default:"Unknown" }}</span>
-                        <small class="text-muted">{{ sub.format }}</small>
+                        {% if sub.language %}
+                        <span class="badge bg-secondary">{{ sub.language|upper }}</span>
+                        {% endif %}
+                        <small class="text-muted">{{ sub.format|upper }}</small>
                     </li>
                     {% endfor %}
                 </ul>
