@@ -1,4 +1,6 @@
+import re
 import markdown
+from pathlib import Path
 from django.core.handlers.wsgi import WSGIRequest
 from django.http import HttpResponse, HttpResponseNotAllowed
 from django.shortcuts import render, get_object_or_404
@@ -6,6 +8,7 @@ from django.shortcuts import render, get_object_or_404
 from apps.notes.models import Note
 from apps.courses.models import CourseNode, Course
 from apps.workspaces.models import Workspace
+from domain.skills.storage_mapping import resolve_absolute
 
 
 def _render_markdown(content: str) -> str:
@@ -61,6 +64,80 @@ def note_create(request: WSGIRequest, course_pk: int, node_pk: int) -> HttpRespo
             "note": note,
         },
     )
+
+
+def note_from_subtitle(request: WSGIRequest, course_pk: int, node_pk: int) -> HttpResponse:
+    """Create a note from a subtitle file's content."""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    course = get_object_or_404(Course, pk=course_pk)
+    node = get_object_or_404(CourseNode, pk=node_pk, course_id=course_pk)
+    sub_path = request.POST.get("sub_path", "").strip()
+
+    if not sub_path:
+        return HttpResponse(status=204)
+
+    try:
+        absolute_path = resolve_absolute(course.root_path, sub_path)
+    except Exception:
+        return HttpResponse(status=204)
+
+    path = Path(absolute_path)
+    if not path.exists():
+        return HttpResponse(status=204)
+
+    try:
+        raw = path.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return HttpResponse(status=204)
+
+    # Clean subtitle content into readable text
+    content = _clean_subtitle(raw, path.suffix.lower())
+
+    if not content.strip():
+        return HttpResponse(status=204)
+
+    note = Note.objects.create(course_node=node, content=content)
+
+    notes = node.notes.all()
+    return render(
+        request,
+        "notes/_note_list.html",
+        {
+            "node": node,
+            "notes": notes,
+        },
+    )
+
+
+def _clean_subtitle(raw: str, ext: str) -> str:
+    """Convert SRT/VTT content to clean readable text."""
+    # Remove VTT header
+    if raw.startswith("WEBVTT"):
+        raw = raw[6:]
+    # Remove blank lines and metadata
+    lines = []
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        # Skip sequence numbers (SRT)
+        if re.match(r"^\d+$", line):
+            continue
+        # Skip timestamps
+        if re.match(r"[\d:,.]+ --> [\d:,.]+", line):
+            continue
+        # Skip VTT metadata
+        if line.startswith("NOTE") or line.startswith("Kind:") or line.startswith("Language:"):
+            continue
+        lines.append(line)
+    # Deduplicate consecutive identical lines
+    deduped = []
+    for line in lines:
+        if not deduped or line != deduped[-1]:
+            deduped.append(line)
+    return "\n".join(deduped)
 
 
 def note_edit(request: WSGIRequest, pk: int) -> HttpResponse:

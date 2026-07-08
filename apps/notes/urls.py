@@ -13,6 +13,11 @@ urlpatterns = [
         views.note_create,
         name="note_create",
     ),
+    path(
+        "courses/<int:course_pk>/nodes/<int:node_pk>/notes/from-subtitle/",
+        views.note_from_subtitle,
+        name="note_from_subtitle",
+    ),
     path("<int:pk>/edit/", views.note_edit, name="note_edit"),
     path("<int:pk>/delete/", views.note_delete, name="note_delete"),
     path("search/", views.notes_search, name="notes_search"),
