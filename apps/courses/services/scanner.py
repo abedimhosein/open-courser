@@ -157,7 +157,41 @@ def scan_course(course: Course) -> ScanResult:
         except Exception as e:
             log.warning("Failed to extract metadata for %s: %s", node.relative_path, e)
 
+    # Recalculate course cached durations
+    _update_course_durations(course)
+
     return result
+
+
+def _update_course_durations(course: Course) -> None:
+    """Recalculate and cache total/watched/remaining duration for a course."""
+    from apps.media.models import MediaMetadata
+    from apps.progress.models import WatchHistory
+
+    total = MediaMetadata.objects.filter(
+        course_node__course=course,
+        course_node__node_type="file",
+        duration__isnull=False,
+    ).values_list("duration", flat=True)
+    course.total_duration = sum(total)
+
+    watched = 0.0
+    for wh in WatchHistory.objects.filter(
+        course_node__course=course,
+        course_node__node_type="file",
+    ):
+        node = wh.course_node
+        dur = None
+        if hasattr(node, "media_metadata") and node.media_metadata:
+            dur = node.media_metadata.duration
+        if wh.completed and dur:
+            watched += dur
+        elif wh.duration_watched:
+            watched += wh.duration_watched
+
+    course.watched_duration = watched
+    course.remaining_duration = max(course.total_duration - watched, 0)
+    course.save(update_fields=["total_duration", "watched_duration", "remaining_duration"])
 
 
 def _find_parent_node(course: Course, rel_path: str) -> CourseNode | None:

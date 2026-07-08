@@ -43,12 +43,16 @@
         <button class="btn btn-outline-success btn-sm"
                 title="Mark all files as completed"
                 hx-post="{% url 'course_complete_all' course.pk %}"
+                hx-target="#course-content"
+                hx-swap="outerHTML"
                 hx-confirm="Mark all files as completed?">
             <i class="fa-solid fa-check-double me-1"></i>Complete All
         </button>
         <button class="btn btn-outline-danger btn-sm"
                 title="Reset progress for all files"
                 hx-post="{% url 'course_reset_all' course.pk %}"
+                hx-target="#course-content"
+                hx-swap="outerHTML"
                 hx-confirm="Reset progress for all files?">
             <i class="fa-solid fa-rotate-left me-1"></i>Reset All
         </button>

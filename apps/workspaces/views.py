@@ -44,10 +44,7 @@ def workspace_list(request: HttpRequest) -> HttpResponse:
 
     if sort_by == "duration":
         workspaces = workspaces.annotate(
-            _total_duration=Sum(
-                "courses__nodes__media_metadata__duration",
-                filter=Q(courses__nodes__media_metadata__duration__isnull=False),
-            ),
+            _total_duration=Sum("courses__total_duration"),
         ).order_by("-_total_duration")
     elif sort_by == "courses":
         workspaces = workspaces.order_by("-course_count")
@@ -71,7 +68,7 @@ def sort_course_list(courses, sort_by: str) -> list:
         )
     elif sort_by == "duration":
         course_list.sort(
-            key=lambda x: (x["progress"] or {}).get("total_duration", 0) or 0,
+            key=lambda x: x["course"].total_duration,
             reverse=True,
         )
     else:

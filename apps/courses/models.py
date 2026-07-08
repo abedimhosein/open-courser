@@ -23,6 +23,9 @@ class Course(models.Model):
     root_path = models.CharField(max_length=1024)
     cover_image = models.ImageField(upload_to=_cover_upload_path, blank=True)
     locked = models.BooleanField(default=False)
+    total_duration = models.FloatField(default=0, db_index=True)
+    watched_duration = models.FloatField(default=0, db_index=True)
+    remaining_duration = models.FloatField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(default=timezone.now, blank=True)
 

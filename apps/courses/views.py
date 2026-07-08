@@ -161,21 +161,55 @@ def course_toggle_lock(request: WSGIRequest, pk: int) -> HttpResponse:
 
 def course_complete_all(request: WSGIRequest, pk: int) -> HttpResponse:
     """Mark all file nodes in a course as completed."""
+    from apps.courses.services.scanner import _update_course_durations
     course = get_object_or_404(Course, pk=pk)
     for node in CourseNode.objects.filter(course=course, node_type="file"):
         mark_completed(node)
-    response = HttpResponse()
-    response["HX-Redirect"] = reverse("course_detail", kwargs={"pk": course.pk})
-    return response
+    _update_course_durations(course)
+
+    nodes = CourseNode.objects.filter(course=course).order_by("sort_order", "name")
+    tree = _build_node_tree(list(nodes))
+    file_nodes = [n for n in nodes if n.node_type == "file"]
+    file_progresses = [get_file_progress(n) for n in file_nodes]
+    progress = get_course_progress(course)
+
+    return render(
+        request,
+        "courses/_course_content.html",
+        {
+            "course": course,
+            "tree": tree,
+            "file_nodes": file_nodes,
+            "file_progresses": file_progresses,
+            "progress": progress,
+        },
+    )
 
 
 def course_reset_all(request: WSGIRequest, pk: int) -> HttpResponse:
     """Reset progress for all file nodes in a course."""
+    from apps.courses.services.scanner import _update_course_durations
     course = get_object_or_404(Course, pk=pk)
     WatchHistory.objects.filter(course_node__course=course, course_node__node_type="file").delete()
-    response = HttpResponse()
-    response["HX-Redirect"] = reverse("course_detail", kwargs={"pk": course.pk})
-    return response
+    _update_course_durations(course)
+
+    nodes = CourseNode.objects.filter(course=course).order_by("sort_order", "name")
+    tree = _build_node_tree(list(nodes))
+    file_nodes = [n for n in nodes if n.node_type == "file"]
+    file_progresses = [get_file_progress(n) for n in file_nodes]
+    progress = get_course_progress(course)
+
+    return render(
+        request,
+        "courses/_course_content.html",
+        {
+            "course": course,
+            "tree": tree,
+            "file_nodes": file_nodes,
+            "file_progresses": file_progresses,
+            "progress": progress,
+        },
+    )
 
 
 def course_progress_partial(request: WSGIRequest, pk: int) -> HttpResponse:
@@ -274,7 +308,9 @@ def _toggle_node_completion(node: CourseNode) -> None:
         mark_completed(node)
 
     from django.utils import timezone
+    from apps.courses.services.scanner import _update_course_durations
     Course.objects.filter(pk=node.course_id).update(updated_at=timezone.now())
+    _update_course_durations(node.course)
 
 
 def file_detail(request: WSGIRequest, course_pk: int, node_pk: int) -> HttpResponse:
