@@ -71,9 +71,13 @@
             align-items: center;
             gap: 0.4rem;
         }
-        .oc-nav-link:hover {
+        .oc-nav-link:hover,
+        .oc-nav-link.active {
             color: #fff;
             background: var(--accent-dim);
+        }
+        .oc-nav-link.active {
+            box-shadow: inset 0 -2px 0 var(--accent);
         }
         .oc-footer {
             background: var(--surface);
@@ -147,16 +151,16 @@
                                style="width: 150px;">
                     </form>
                     <div class="d-none d-lg-flex align-items-center gap-1">
-                        <a class="oc-nav-link" href="{% url 'activity' %}">
+                        <a class="oc-nav-link{% if request.resolver_match.url_name == 'activity' %} active{% endif %}" href="{% url 'activity' %}">
                             <i class="fa-solid fa-chart-column"></i> Activity
                         </a>
-                        <a class="oc-nav-link" href="{% url 'notes_search' %}">
+                        <a class="oc-nav-link{% if request.resolver_match.url_name == 'notes_search' %} active{% endif %}" href="{% url 'notes_search' %}">
                             <i class="fa-solid fa-sticky-note"></i> Notes
                         </a>
-                        <a class="oc-nav-link" href="{% url 'tag_list' %}">
+                        <a class="oc-nav-link{% if request.resolver_match.url_name == 'tag_list' %} active{% endif %}" href="{% url 'tag_list' %}">
                             <i class="fa-solid fa-tags"></i> Tags
                         </a>
-                        <a class="oc-nav-link" href="{% url 'workspace_list' %}">
+                        <a class="oc-nav-link{% if request.resolver_match.url_name == 'workspace_list' %} active{% endif %}" href="{% url 'workspace_list' %}">
                             <i class="fa-solid fa-layer-group"></i> Workspaces
                         </a>
                         <a class="oc-nav-link" href="https://github.com/abedimhosein/open-courser" target="_blank" rel="noopener">
@@ -168,10 +172,10 @@
                             <i class="fa-solid fa-bars"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{% url 'activity' %}"><i class="fa-solid fa-chart-column me-2"></i>Activity</a></li>
-                            <li><a class="dropdown-item" href="{% url 'notes_search' %}"><i class="fa-solid fa-sticky-note me-2"></i>Notes</a></li>
-                            <li><a class="dropdown-item" href="{% url 'tag_list' %}"><i class="fa-solid fa-tags me-2"></i>Tags</a></li>
-                            <li><a class="dropdown-item" href="{% url 'workspace_list' %}"><i class="fa-solid fa-layer-group me-2"></i>Workspaces</a></li>
+                            <li><a class="dropdown-item{% if request.resolver_match.url_name == 'activity' %} active{% endif %}" href="{% url 'activity' %}"><i class="fa-solid fa-chart-column me-2"></i>Activity</a></li>
+                            <li><a class="dropdown-item{% if request.resolver_match.url_name == 'notes_search' %} active{% endif %}" href="{% url 'notes_search' %}"><i class="fa-solid fa-sticky-note me-2"></i>Notes</a></li>
+                            <li><a class="dropdown-item{% if request.resolver_match.url_name == 'tag_list' %} active{% endif %}" href="{% url 'tag_list' %}"><i class="fa-solid fa-tags me-2"></i>Tags</a></li>
+                            <li><a class="dropdown-item{% if request.resolver_match.url_name == 'workspace_list' %} active{% endif %}" href="{% url 'workspace_list' %}"><i class="fa-solid fa-layer-group me-2"></i>Workspaces</a></li>
                             <li><a class="dropdown-item" href="https://github.com/abedimhosein/open-courser" target="_blank" rel="noopener"><i class="fa-brands fa-github me-2"></i>GitHub</a></li>
                         </ul>
                     </div>
@@ -187,9 +191,9 @@
                                 </form>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'activity' %}"><i class="fa-solid fa-chart-column me-2"></i>Activity</a></li>
-                            <li><a class="dropdown-item" href="{% url 'notes_search' %}"><i class="fa-solid fa-sticky-note me-2"></i>Notes</a></li>
-                            <li><a class="dropdown-item" href="{% url 'workspace_list' %}"><i class="fa-solid fa-layer-group me-2"></i>Workspaces</a></li>
+                            <li><a class="dropdown-item{% if request.resolver_match.url_name == 'activity' %} active{% endif %}" href="{% url 'activity' %}"><i class="fa-solid fa-chart-column me-2"></i>Activity</a></li>
+                            <li><a class="dropdown-item{% if request.resolver_match.url_name == 'notes_search' %} active{% endif %}" href="{% url 'notes_search' %}"><i class="fa-solid fa-sticky-note me-2"></i>Notes</a></li>
+                            <li><a class="dropdown-item{% if request.resolver_match.url_name == 'workspace_list' %} active{% endif %}" href="{% url 'workspace_list' %}"><i class="fa-solid fa-layer-group me-2"></i>Workspaces</a></li>
                             <li><a class="dropdown-item" href="https://github.com/abedimhosein/open-courser" target="_blank" rel="noopener"><i class="fa-brands fa-github me-2"></i>GitHub</a></li>
                         </ul>
                     </div>

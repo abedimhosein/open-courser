@@ -326,6 +326,20 @@ def file_detail(request: WSGIRequest, course_pk: int, node_pk: int) -> HttpRespo
     course = get_object_or_404(Course, pk=course_pk)
     node = get_object_or_404(CourseNode, pk=node_pk, course=course)
 
+    # Prev / next navigation (file nodes only, ordered)
+    file_nodes = list(
+        CourseNode.objects.filter(course=course, node_type="file")
+        .order_by("sort_order", "name")
+        .values_list("pk", flat=True)
+    )
+    current_idx = file_nodes.index(node_pk) if node_pk in file_nodes else -1
+    prev_node = None
+    next_node = None
+    if current_idx > 0:
+        prev_node = file_nodes[current_idx - 1]
+    if current_idx < len(file_nodes) - 1:
+        next_node = file_nodes[current_idx + 1]
+
     error = None
     absolute_path = None
 
@@ -375,6 +389,8 @@ def file_detail(request: WSGIRequest, course_pk: int, node_pk: int) -> HttpRespo
             "subtitles": subtitles,
             "progress": progress,
             "error": error,
+            "prev_node": prev_node,
+            "next_node": next_node,
         },
     )
 

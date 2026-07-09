@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load course_extras %}
 
-{% block title %}{{ file.name }} - OpenCourser{% endblock %}
+{% block title %}{{ course.title }} - {{ file.name }}{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb">
@@ -20,6 +20,25 @@
         <strong>File Not Found</strong><br>
         {{ error }}
     </div>
+</div>
+{% endif %}
+
+{% if prev_node or next_node %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    {% if prev_node %}
+    <a href="{% url 'file_detail' course.pk prev_node %}" class="btn btn-outline-secondary">
+        <i class="fa-solid fa-chevron-left me-1"></i>Previous
+    </a>
+    {% else %}
+    <div></div>
+    {% endif %}
+    {% if next_node %}
+    <a href="{% url 'file_detail' course.pk next_node %}" class="btn btn-outline-secondary">
+        Next<i class="fa-solid fa-chevron-right ms-1"></i>
+    </a>
+    {% else %}
+    <div></div>
+    {% endif %}
 </div>
 {% endif %}
 
@@ -153,6 +172,25 @@
         {% endif %}
     </div>
 </div>
+
+{% if prev_node or next_node %}
+<div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+    {% if prev_node %}
+    <a href="{% url 'file_detail' course.pk prev_node %}" class="btn btn-outline-secondary">
+        <i class="fa-solid fa-chevron-left me-1"></i>Previous
+    </a>
+    {% else %}
+    <div></div>
+    {% endif %}
+    {% if next_node %}
+    <a href="{% url 'file_detail' course.pk next_node %}" class="btn btn-outline-secondary">
+        Next<i class="fa-solid fa-chevron-right ms-1"></i>
+    </a>
+    {% else %}
+    <div></div>
+    {% endif %}
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
